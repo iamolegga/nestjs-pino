@@ -84,7 +84,6 @@ app.use(...createLoggerMiddlewares({ level: config.logLevel }));
 Just add `Logger` as provider to your module:
 
 ```ts
-import { Provider } from "@nestjs/common";
 import { Logger } from 'nestjs-pino';
 
 @Module({
