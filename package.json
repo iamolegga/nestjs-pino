@@ -1,0 +1,73 @@
+{
+  "name": "nestjs-pino",
+  "version": "0.1.0",
+  "description": "Pino logger for NestJS",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc --p tsconfig.build.json",
+    "report": "cat ./coverage/lcov.info | coveralls",
+    "example": "tsc && LOG_LEVEL=debug node dist/example/main"
+  },
+  "engineStrict": false,
+  "engines": {
+    "node": "^4.7 || >=6.9 || >=7.3 || >=8.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamolegga/nestjs-pino.git"
+  },
+  "keywords": [
+    "pino",
+    "nestjs",
+    "nest.js",
+    "nest",
+    "logger"
+  ],
+  "author": "Oleg Repin <iamolegga@gmail.com> (http://github.com/iamolegga)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iamolegga/nestjs-pino/issues"
+  },
+  "homepage": "https://github.com/iamolegga/nestjs-pino#readme",
+  "dependencies": {
+    "express-ctx": "^0.1.1",
+    "express-pino-logger": "^4.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^6.6.7",
+    "@nestjs/core": "^6.6.7",
+    "@nestjs/platform-express": "^6.6.7",
+    "@nestjs/testing": "^6.6.7",
+    "@types/express": "^4.17.1",
+    "@types/express-pino-logger": "^4.0.1",
+    "@types/jest": "^24.0.18",
+    "@types/memorystream": "^0.3.0",
+    "@types/node": "^12.7.4",
+    "@types/supertest": "^2.0.8",
+    "coveralls": "^3.0.6",
+    "express": "^4.17.1",
+    "jest": "^24.9.0",
+    "memorystream": "^0.3.1",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^6.5.3",
+    "supertest": "^4.0.2",
+    "ts-jest": "^24.0.2",
+    "tslint": "^5.19.0",
+    "typescript": "^3.6.2"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".spec.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverage": true,
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}
