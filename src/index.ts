@@ -96,3 +96,13 @@ export function createLoggerMiddlewares(...params: Params) {
 function hasLoggerParamsPassedLogger(params: Params): params is [PassedLogger] {
   return params[0] && "logger" in params[0];
 }
+
+// Copy from 'express-pino-logger' types
+// because it's not building to own `.d.ts`
+declare global {
+  namespace Express {
+    interface Request {
+      log: pino.Logger;
+    }
+  }
+}
