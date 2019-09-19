@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/nestjs-pino)](https://www.npmjs.com/package/nestjs-pino)
 [![Travis (.org)](https://img.shields.io/travis/iamolegga/nestjs-pino)](https://travis-ci.org/iamolegga/nestjs-pino)
 [![Coverage Status](https://coveralls.io/repos/github/iamolegga/nestjs-pino/badge.svg?branch=master)](https://coveralls.io/github/iamolegga/nestjs-pino?branch=master)
-![Snyk Vulnerabilities for npm package](https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino)
+[![Snyk Vulnerabilities for npm package](https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino)](https://snyk.io/test/github/iamolegga/nestjs-pino)
 
 Logging in NestJS with automatic tracing on every layer
 
