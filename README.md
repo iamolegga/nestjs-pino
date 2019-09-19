@@ -11,6 +11,8 @@ Logging in NestJS with automatic tracing on every layer
 
 ```ts
 // app.controller.ts
+import { Logger } from 'nestjs-pino';
+
 @Controller()
 export class AppController {
   constructor(
@@ -24,7 +26,9 @@ export class AppController {
     return `Hello ${this.myService.getWorld()}`;
   }
 }
+```
 
+```ts
 // my.service.ts
 import { Logger } from 'nestjs-pino';
 
@@ -43,9 +47,7 @@ output:
 
 ```json
 {"level":30,"time":1568720266616,"pid":25566,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53753},"msg":"calling AppController.getHello","v":1}
-
 {"level":20,"time":1568720266616,"pid":25566,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53753},"msg":"calling MyService.getWorld","v":1}
-
 {"level":30,"time":1568720266623,"pid":25566,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53753},"res":{"statusCode":200,"headers":{...}},"responseTime":9,"msg":"request completed","v":1}
 ```
 
@@ -96,6 +98,22 @@ class MyModule {}
 ### Usage as Logger service
 
 `Logger` implements standard NestJS `LoggerService` interface. So if you are familiar with [built in NestJS logger](https://docs.nestjs.com/techniques/logger) you are good to go.
+
+
+```ts
+// my.service.ts
+import { Logger } from 'nestjs-pino';
+
+@Injectable()
+export class MyService {
+  constructor(private readonly logger: Logger) {}
+
+  getWorld() {
+    this.logger.debug("calling MyService.getWorld");
+    return "World!";
+  }
+}
+```
 
 ### Usage as NestJS app logger
 
