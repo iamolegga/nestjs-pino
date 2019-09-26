@@ -9,7 +9,7 @@ import {
 import MemoryStream from "memorystream";
 import request from "supertest";
 import pino from "pino";
-import { Logger, createLoggerMiddlewares } from "./";
+import { Logger, LoggerModule } from "./";
 
 type LogObject = {
   msg: string;
@@ -54,16 +54,16 @@ describe("methods", () => {
       }
 
       @Module({
+        imports: [LoggerModule.forRoot({ level: pinoLevel }, stream)],
         controllers: [TestController],
         providers: [TestService, Logger]
       })
       class TestModule {}
 
       const app = await NestFactory.create(TestModule, { logger: false });
-      app.use(...createLoggerMiddlewares({ level: pinoLevel }, stream));
-      const logger = app.get(Logger);
-      app.useLogger(logger);
       const server = app.getHttpServer();
+
+      const logger = app.get(Logger);
 
       await app.init();
       await request(server).get("/");
@@ -118,14 +118,13 @@ describe("request context", () => {
     }
 
     @Module({
+      imports: [LoggerModule.forRoot(stream)],
       controllers: [TestController],
       providers: [TestService, Logger]
     })
     class TestModule {}
 
-    app = await NestFactory.create(TestModule, { logger: false });
-    app.use(...createLoggerMiddlewares(stream));
-    app.useLogger(app.get(Logger));
+    app = await NestFactory.create(TestModule, { logger: new Logger() });
     const server = app.getHttpServer();
 
     await app.init();
@@ -183,14 +182,13 @@ describe("passed logger", () => {
     }
 
     @Module({
+      imports: [LoggerModule.forRoot({ logger: pino(stream) })],
       controllers: [TestController],
       providers: [TestService, Logger]
     })
     class TestModule {}
 
-    const app = await NestFactory.create(TestModule, { logger: false });
-    app.use(...createLoggerMiddlewares({ logger: pino(stream) }));
-    app.useLogger(app.get(Logger));
+    const app = await NestFactory.create(TestModule, { logger: new Logger() });
     const server = app.getHttpServer();
 
     await app.init();

@@ -1,16 +1,31 @@
-# nestjs-pino
+<p align="center">
+  <img alt="NestJS-Pino logo" src="./logo.jpg" width="300" height="300" />
+</p>
 
-[![npm](https://img.shields.io/npm/v/nestjs-pino)](https://www.npmjs.com/package/nestjs-pino)
-[![Travis (.org)](https://img.shields.io/travis/iamolegga/nestjs-pino)](https://travis-ci.org/iamolegga/nestjs-pino)
-[![Coverage Status](https://coveralls.io/repos/github/iamolegga/nestjs-pino/badge.svg?branch=master)](https://coveralls.io/github/iamolegga/nestjs-pino?branch=master)
-[![Snyk Vulnerabilities for npm package](https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino)](https://snyk.io/test/github/iamolegga/nestjs-pino)
+<h1 align="center">NestJS-Pino</h1>
 
-Logging in NestJS with automatic tracing on every layer
+<p align="center">
+  <a href="https://www.npmjs.com/package/nestjs-pino">
+    <img alt="npm" src="https://img.shields.io/npm/v/nestjs-pino" />
+  </a>
+  <a href="https://travis-ci.org/iamolegga/nestjs-pino">
+    <img alt="Travis (.org)" src="https://img.shields.io/travis/iamolegga/nestjs-pino" />
+  </a>
+  <a href="https://coveralls.io/github/iamolegga/nestjs-pino?branch=master">
+    <img alt="Coverage Status" src="https://coveralls.io/repos/github/iamolegga/nestjs-pino/badge.svg?branch=master" />
+  </a>
+  <a href="https://snyk.io/test/github/iamolegga/nestjs-pino">
+    <img alt="Snyk Vulnerabilities for npm package" src="https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino" />
+  </a>
+</p>
+
+<p align="center">✨✨✨ Logging in NestJS via Pino with <b>REQUEST CONTEXT IN ANY PLACE</b> ✨✨✨</p>
 
 ## Example
 
+In controller:
+
 ```ts
-// app.controller.ts
 import { Logger } from 'nestjs-pino';
 
 @Controller()
@@ -28,8 +43,9 @@ export class AppController {
 }
 ```
 
+In service:
+
 ```ts
-// my.service.ts
 import { Logger } from 'nestjs-pino';
 
 @Injectable()
@@ -43,7 +59,7 @@ export class MyService {
 }
 ```
 
-output:
+Output (every log has request context):
 
 ```json
 {"level":30,"time":1568720266616,"pid":25566,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53753},"msg":"calling AppController.getHello","v":1}
@@ -57,48 +73,72 @@ output:
 npm i nestjs-pino
 ```
 
-## Using
+## Register module
 
-### Setup middlewares
+### Default params
 
-First of all you shoud setup middlewares, that allows to do:
-
-- automatic logging of every request/response
-- automatic binding each log to it's request context when using `Logger` service
+Just import `LoggerModule` to your module:
 
 ```ts
-import { createLoggerMiddlewares } from 'nestjs-pino';
-
-const app = await NestFactory.create(MyModule);
-
-// basic example
-app.use(...createLoggerMiddlewares());
-
-// if you want to configure logger somehow depending on your ConfigService
-// you can do something like that:
-const config = app.get(ConfigService);
-app.use(...createLoggerMiddlewares({ level: config.logLevel }));
-```
-
-`createLoggerMiddlewares` API is the same as [express-pino-logger](https://github.com/pinojs/express-pino-logger#api)
-
-### Providing Logger service
-
-Just add `Logger` as provider to your module:
-
-```ts
-import { Logger } from 'nestjs-pino';
+import { LoggerModule } from 'nestjs-pino';
 
 @Module({
-  providers: [Logger]
+  imports: [LoggerModule.forRoot()],
+  ...
 })
 class MyModule {}
 ```
 
-### Usage as Logger service
+### Configure
+
+Also, you can configure it. `forRoot` function has the same API as [express-pino-logger](https://github.com/pinojs/express-pino-logger#api) has (it's the same as [pino itself](https://github.com/pinojs/pino/blob/master/docs/api.md#options) and can take existing logger via `{ logger: pino(...) }`):
+
+```ts
+import { LoggerModule } from 'nestjs-pino';
+
+@Module({
+  imports: [
+    LoggerModule.forRoot(
+      {
+        name: 'add some name to every JSON line',
+        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+        prettyPrint: process.env.NODE_ENV !== 'production',
+        useLevelLabels: true,
+        // and all the others...
+      },
+      someWritableStream
+    )
+  ],
+  ...
+})
+class MyModule {}
+```
+
+### Extreme mode
+
+If you want to enable `extreme` mode you should read [pino extreme mode docs](https://github.com/pinojs/pino/blob/master/docs/extreme.md#extreme-mode).
+
+If you are ok with that, so you can configure module like this:
+
+```ts
+import * as pino from 'pino';
+import { LoggerModule } from 'nestjs-pino';
+
+const dest = pino.extreme();
+const logger = pino(dest);
+
+@Module({
+  imports: [LoggerModule.forRoot({ logger })],
+  ...
+})
+class MyModule {}
+```
+
+Also you can read more about [Log loss prevention](https://github.com/pinojs/pino/blob/master/docs/extreme.md#log-loss-prevention).
+
+## Usage as Logger service
 
 `Logger` implements standard NestJS `LoggerService` interface. So if you are familiar with [built in NestJS logger](https://docs.nestjs.com/techniques/logger) you are good to go.
-
 
 ```ts
 // my.service.ts
@@ -115,11 +155,12 @@ export class MyService {
 }
 ```
 
-### Usage as NestJS app logger
+## Usage as NestJS app logger
 
 ```ts
-const app = await NestFactory.create(MyModule, { logger: false });
-app.useLogger(app.get(Logger));
+import { Logger } from 'nestjs-pino';
+
+const app = await NestFactory.create(MyModule, { logger: new Logger() });
 ```
 
 ## FAQ

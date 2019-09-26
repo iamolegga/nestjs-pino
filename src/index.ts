@@ -1,12 +1,31 @@
-import { Injectable, LoggerService } from "@nestjs/common";
+import {
+  Injectable,
+  LoggerService,
+  Global,
+  Module,
+  DynamicModule,
+  NestModule,
+  MiddlewareConsumer,
+  RequestMethod
+} from "@nestjs/common";
 import express from "express";
 import expressPinoMiddleware from "express-pino-logger";
 import pino, { LoggerOptions, DestinationStream } from "pino";
 import { getValue, setValue, middleware as ctxMiddleware } from "express-ctx";
 
+type PassedLogger = { logger: pino.Logger };
+
+type Params =
+  | []
+  | [PassedLogger]
+  | [LoggerOptions | DestinationStream]
+  | [LoggerOptions, DestinationStream];
+
 let outOfContextLogger: pino.Logger;
 
 const loggerKey = "logger";
+
+let rootParams: Params;
 
 @Injectable()
 export class Logger implements LoggerService {
@@ -49,39 +68,39 @@ export class Logger implements LoggerService {
   }
 }
 
-type PassedLogger = { logger: pino.Logger };
+@Global()
+@Module({
+  providers: [Logger],
+  exports: [Logger]
+})
+export class LoggerModule implements NestModule {
+  static forRoot(...params: Params): DynamicModule {
+    rootParams = params;
 
-type Params =
-  | []
-  | [PassedLogger]
-  | [LoggerOptions | DestinationStream]
-  | [LoggerOptions, DestinationStream];
+    if (hasLoggerParamsPassedLogger(rootParams)) {
+      outOfContextLogger = rootParams[0].logger;
+    } else {
+      outOfContextLogger = pino(...rootParams);
+    }
 
-export function createLoggerMiddlewares(): express.Handler[];
-
-export function createLoggerMiddlewares(
-  options: PassedLogger
-): express.Handler[];
-
-export function createLoggerMiddlewares(
-  optionsOrStream: LoggerOptions | DestinationStream
-): express.Handler[];
-
-export function createLoggerMiddlewares(
-  options: LoggerOptions,
-  stream: DestinationStream
-): express.Handler[];
-
-export function createLoggerMiddlewares(...params: Params) {
-  if (hasLoggerParamsPassedLogger(params)) {
-    outOfContextLogger = params[0].logger;
-  } else {
-    outOfContextLogger = pino(...params);
+    return {
+      module: LoggerModule,
+      providers: [Logger],
+      exports: [Logger]
+    };
   }
 
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(...createLoggerMiddlewares())
+      .forRoutes({ path: "*", method: RequestMethod.ALL });
+  }
+}
+
+function createLoggerMiddlewares() {
   return [
     ctxMiddleware,
-    expressPinoMiddleware(...params),
+    expressPinoMiddleware(...rootParams),
     (
       req: express.Request,
       res: express.Response,
@@ -97,8 +116,7 @@ function hasLoggerParamsPassedLogger(params: Params): params is [PassedLogger] {
   return params[0] && "logger" in params[0];
 }
 
-// Copy from 'express-pino-logger' types
-// because it's not building to own `.d.ts`
+// Copy from 'express-pino-logger' types because it's not builds to own `.d.ts`
 declare global {
   namespace Express {
     interface Request {
