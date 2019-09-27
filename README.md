@@ -17,9 +17,10 @@
   <a href="https://snyk.io/test/github/iamolegga/nestjs-pino">
     <img alt="Snyk Vulnerabilities for npm package" src="https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino" />
   </a>
+  <img alt="Supported platforms: Express & Fastify" src="https://img.shields.io/badge/platforms-Express%20%26%20Fastify-green" />
 </p>
 
-<p align="center">✨✨✨ Logging in NestJS via Pino with <b>REQUEST CONTEXT IN ANY PLACE</b> ✨✨✨</p>
+<p align="center">✨✨✨ Platform agnostic logger for NestJS based on Pino with <b>REQUEST CONTEXT IN EVERY LOG</b> ✨✨✨</p>
 
 ## Example
 
@@ -116,7 +117,7 @@ class MyModule {}
 
 ### Extreme mode
 
-If you want to enable `extreme` mode you should read [pino extreme mode docs](https://github.com/pinojs/pino/blob/master/docs/extreme.md#extreme-mode).
+If you want to enable `extreme` mode you should read [pino extreme mode docs](https://github.com/pinojs/pino/blob/master/docs/extreme.md#extreme-mode) first.
 
 If you are ok with that, so you can configure module like this:
 
