@@ -11,7 +11,7 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    this.logger.log("calling AppController.getHello");
+    this.logger.log("getHello()", AppController.name);
     return `Hello ${this.myService.getWorld()}`;
   }
 }

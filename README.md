@@ -24,6 +24,19 @@
 
 ## Example
 
+Import module:
+
+```ts
+import { LoggerModule } from 'nestjs-pino';
+
+@Module({
+  imports: [LoggerModule.forRoot()],
+  controllers: [AppController],
+  providers: [MyService]
+})
+class MyModule {}
+```
+
 In controller:
 
 ```ts
@@ -38,7 +51,7 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    this.logger.log("calling AppController.getHello");
+    this.logger.log("getHello()", AppController.name);
     return `Hello ${this.myService.getWorld()}`;
   }
 }
@@ -53,19 +66,28 @@ import { Logger } from 'nestjs-pino';
 export class MyService {
   constructor(private readonly logger: Logger) {}
 
-  getWorld() {
-    this.logger.debug("calling MyService.getWorld");
+  getWorld(...params: any[]) {
+    this.logger.log("getWorld(%o)", MyService.name, params);
     return "World!";
   }
 }
 ```
 
-Output (every log has request context):
+Output:
 
 ```json
-{"level":30,"time":1568720266616,"pid":25566,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53753},"msg":"calling AppController.getHello","v":1}
-{"level":20,"time":1568720266616,"pid":25566,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53753},"msg":"calling MyService.getWorld","v":1}
-{"level":30,"time":1568720266623,"pid":25566,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53753},"res":{"statusCode":200,"headers":{...}},"responseTime":9,"msg":"request completed","v":1}
+// Logs by Nest itself, when set `app.useLogger(app.get(Logger))`
+{"level":30,"time":1570470154387,"pid":17383,"hostname":"my-host","context":"RoutesResolver","msg":"AppController {/}: true","v":1}
+{"level":30,"time":1570470154391,"pid":17383,"hostname":"my-host","context":"RouterExplorer","msg":"Mapped {/, GET} route true","v":1}
+{"level":30,"time":1570470154405,"pid":17383,"hostname":"my-host","context":"NestApplication","msg":"Nest application successfully started true","v":1}
+
+// Logs by injected Logger methods in Services/Controllers
+// Every log has it's request data
+{"level":30,"time":1570470161805,"pid":17383,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53957},"context":"AppController","msg":"getHello()","v":1}
+{"level":30,"time":1570470161805,"pid":17383,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53957},"context":"MyService","msg":"getWorld([])","v":1}
+
+// Automatic logs of every request/response
+{"level":30,"time":1570470161819,"pid":17383,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53957},"res":{"statusCode":304,"headers":{...}},"responseTime":15,"msg":"request completed","v":1}
 ```
 
 ## Install
@@ -90,9 +112,9 @@ import { LoggerModule } from 'nestjs-pino';
 class MyModule {}
 ```
 
-### Configure
+### Synchronous configuration
 
-Also, you can configure it. `forRoot` function has the same API as [express-pino-logger](https://github.com/pinojs/express-pino-logger#api) has (it's the same as [pino itself](https://github.com/pinojs/pino/blob/master/docs/api.md#options) and can take existing logger via `{ logger: pino(...) }`):
+`LoggerModule.forRoot` has the same API as [pino-http](https://github.com/pinojs/pino-http#pinohttpopts-stream):
 
 ```ts
 import { LoggerModule } from 'nestjs-pino';
@@ -113,6 +135,68 @@ import { LoggerModule } from 'nestjs-pino';
   ...
 })
 class MyModule {}
+```
+
+
+### Asynchronous configuration
+
+With `LoggerModule.forRootAsync` you can for example import your `ConfigModule` and inject `ConfigService` to use it in `useFactory` method.
+
+`useFactory` should return result typeof arguments of [pino-http](https://github.com/pinojs/pino-http#pinohttpopts-stream) or `null`, example:
+
+```ts
+import { LoggerModule } from 'nestjs-pino';
+
+@Injectable()
+class ConfigService {
+  public readonly level = "debug";
+}
+
+@Module({
+  providers: [ConfigService],
+  exports: [ConfigService]
+})
+class ConfigModule {}
+
+@Module({
+  imports: [
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        return { level: config.level };
+      }
+    })
+  ],
+  ...
+})
+class TestModule {}
+```
+
+Or without `ConfigModule` you can just pass `ConfigService` to `providers`:
+
+```ts
+import { LoggerModule } from 'nestjs-pino';
+
+@Injectable()
+class ConfigService {
+  public readonly level = "debug";
+  public readonly stream = stream;
+}
+
+@Module({
+  imports: [
+    LoggerModule.forRootAsync({
+      providers: [ConfigService],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        return [{ level: config.level }, config.stream];
+      }
+    })
+  ],
+  controllers: [TestController]
+})
+class TestModule {}
 ```
 
 ### Extreme mode
@@ -149,8 +233,8 @@ import { Logger } from 'nestjs-pino';
 export class MyService {
   constructor(private readonly logger: Logger) {}
 
-  getWorld() {
-    this.logger.debug("calling MyService.getWorld");
+  getWorld(...params: any[]) {
+    this.logger.log("getWorld(%o)", MyService.name, params);
     return "World!";
   }
 }
@@ -158,17 +242,20 @@ export class MyService {
 
 ## Usage as NestJS app logger
 
+According to [official docs](https://docs.nestjs.com/techniques/logger#dependency-injection), loggers with Dependency injection should be set via following construction:
+
 ```ts
 import { Logger } from 'nestjs-pino';
 
-const app = await NestFactory.create(MyModule, { logger: new Logger() });
+const app = await NestFactory.create(MyModule, { logger: false });
+app.useLogger(app.get(Logger));
 ```
 
 ## FAQ
 
 __Q__: _How does it work?_
 
-__A__: It use [express-pino-logger](https://github.com/pinojs/express-pino-logger) under hood, so every request has it's own [child-logger](https://github.com/pinojs/pino/blob/master/docs/child-loggers.md), and with help of [async_hooks](https://nodejs.org/api/async_hooks.html) `Logger` can get it while calling own methods. So your logs can be groupped by `req.id`.
+__A__: It use [pino-http](https://github.com/pinojs/pino-http) under hood, so every request has it's own [child-logger](https://github.com/pinojs/pino/blob/master/docs/child-loggers.md), and with help of [async_hooks](https://nodejs.org/api/async_hooks.html) `Logger` can get it while calling own methods. So your logs can be groupped by `req.id`.
 
 __Q__: _Why use [async_hooks](https://nodejs.org/api/async_hooks.html) instead of [REQUEST scope](https://docs.nestjs.com/fundamentals/injection-scopes#per-request-injection)?_
 
@@ -181,8 +268,11 @@ __A__: Please read [this](https://github.com/jeff-lewis/cls-hooked#continuation-
 __Q__: _What about pino built in methods/levels?_
 
 __A__: Pino built in methods are not compatible to NestJS built in `LoggerService` methods, so decision is to map pino methods to `LoggerService` methods to save `Logger` API:
-  - `trace`=`verbose`
-  - `debug`=`debug`
-  - `info`=`log`
-  - `warn`=`warn`
-  - `error`=`error`
+
+| pino    | LoggerService |
+| ------- | ------------- |
+| `trace` | `verbose`     |
+| `debug` | `debug`       |
+| `info`  | `log`         |
+| `warn`  | `warn`        |
+| `error` | `error`       |

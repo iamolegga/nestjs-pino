@@ -6,121 +6,185 @@ import {
   DynamicModule,
   NestModule,
   MiddlewareConsumer,
-  RequestMethod
+  RequestMethod,
+  Inject
 } from "@nestjs/common";
+import { ModuleMetadata, Provider } from "@nestjs/common/interfaces";
 import express from "express";
-import expressPinoMiddleware from "express-pino-logger";
+import pinoHttp from "pino-http";
 import pino, { LoggerOptions, DestinationStream } from "pino";
 import { getValue, setValue, middleware as ctxMiddleware } from "express-ctx";
 
 type PassedLogger = { logger: pino.Logger };
 
-type Params =
-  | []
-  | [PassedLogger]
-  | [LoggerOptions | DestinationStream]
-  | [LoggerOptions, DestinationStream];
+export type Params =
+  | null
+  | pinoHttp.Options
+  | DestinationStream
+  | [pinoHttp.Options, DestinationStream];
 
-let outOfContextLogger: pino.Logger;
+export interface LoggerModuleAsyncOptions
+  extends Pick<ModuleMetadata, "imports" | "providers"> {
+  useFactory: (...args: any[]) => Params;
+  inject?: any[];
+}
 
-const loggerKey = "logger";
+const LOGGER_KEY = "logger";
 
-let rootParams: Params;
+const OPTIONS_PROVIDER_TOKEN = "pino-options";
 
 @Injectable()
 export class Logger implements LoggerService {
-  verbose(msg: string, ...args: any[]): void;
-  verbose(obj: object, msg?: string, ...args: any[]): void;
-  verbose(...params: [any, ...any[]]) {
-    return (getValue<pino.Logger>(loggerKey) || outOfContextLogger).trace(
-      ...params
-    );
-  }
-  debug(msg: string, ...args: any[]): void;
-  debug(obj: object, msg?: string, ...args: any[]): void;
-  debug(...params: [any, ...any[]]) {
-    return (getValue<pino.Logger>(loggerKey) || outOfContextLogger).debug(
-      ...params
-    );
-  }
-  log(msg: string, ...args: any[]): void;
-  log(obj: object, msg?: string, ...args: any[]): void;
-  log(...params: [any, ...any[]]) {
-    return (getValue<pino.Logger>(loggerKey) || outOfContextLogger).info(
-      ...params
-    );
+  private readonly outOfContext: pino.Logger;
+
+  constructor(@Inject(OPTIONS_PROVIDER_TOKEN) options: Params) {
+    if (Array.isArray(options)) {
+      this.outOfContext = pino(...options);
+    } else if (isPassedLogger(options)) {
+      this.outOfContext = options.logger;
+    } else {
+      this.outOfContext = pino(options || undefined);
+    }
   }
 
-  warn(msg: string, ...args: any[]): void;
-  warn(obj: object, msg?: string, ...args: any[]): void;
-  warn(...params: [any, ...any[]]) {
-    return (getValue<pino.Logger>(loggerKey) || outOfContextLogger).warn(
-      ...params
-    );
+  verbose(message: any, context?: string, ...args: any[]) {
+    if (context) {
+      this.logger.trace({ context }, message, ...args);
+    } else {
+      this.logger.trace(message);
+    }
   }
 
-  error(msg: string, ...args: any[]): void;
-  error(obj: object, msg?: string, ...args: any[]): void;
-  error(...params: [any, ...any[]]) {
-    return (getValue<pino.Logger>(loggerKey) || outOfContextLogger).error(
-      ...params
-    );
+  debug(message: any, context?: string, ...args: any[]) {
+    if (context) {
+      this.logger.debug({ context }, message, ...args);
+    } else {
+      this.logger.debug(message);
+    }
+  }
+
+  log(message: any, context?: string, ...args: any[]) {
+    if (context) {
+      this.logger.info({ context }, message, ...args);
+    } else {
+      this.logger.info(message);
+    }
+  }
+
+  warn(message: any, context?: string, ...args: any[]) {
+    if (context) {
+      this.logger.warn({ context }, message, ...args);
+    } else {
+      this.logger.warn(message);
+    }
+  }
+
+  error(message: any, trace?: string, context?: string, ...args: any[]) {
+    if (context) {
+      this.logger.error({ context, trace }, message, ...args);
+    } else if (trace) {
+      this.logger.error({ trace }, message);
+    } else {
+      this.logger.error(message);
+    }
+  }
+
+  private get logger() {
+    return getValue<pino.Logger>(LOGGER_KEY) || this.outOfContext;
+  }
+}
+
+@Module({})
+export class LoggerModule {
+  static forRoot(
+    opts?: PassedLogger | LoggerOptions | DestinationStream
+  ): DynamicModule;
+  static forRoot(opts: LoggerOptions, stream: DestinationStream): DynamicModule;
+  static forRoot(
+    opts?: PassedLogger | LoggerOptions | DestinationStream,
+    stream?: DestinationStream
+  ): DynamicModule {
+    return {
+      module: LoggerModule,
+      imports: [
+        LoggerCoreModule.forRoot(
+          stream ? [opts as LoggerOptions, stream] : opts
+        )
+      ]
+    };
+  }
+
+  static forRootAsync(options: LoggerModuleAsyncOptions): DynamicModule {
+    return {
+      module: LoggerModule,
+      imports: [LoggerCoreModule.forRootAsync(options)]
+    };
   }
 }
 
 @Global()
-@Module({
-  providers: [Logger],
-  exports: [Logger]
-})
-export class LoggerModule implements NestModule {
-  static forRoot(...params: Params): DynamicModule {
-    rootParams = params;
-
-    if (hasLoggerParamsPassedLogger(rootParams)) {
-      outOfContextLogger = rootParams[0].logger;
-    } else {
-      outOfContextLogger = pino(...rootParams);
-    }
+@Module({ providers: [Logger], exports: [Logger] })
+class LoggerCoreModule implements NestModule {
+  static forRoot(options: Params | undefined): DynamicModule {
+    const optionsProvider: Provider<Params> = {
+      provide: OPTIONS_PROVIDER_TOKEN,
+      useValue: options || null
+    };
 
     return {
-      module: LoggerModule,
-      providers: [Logger],
+      module: LoggerCoreModule,
+      providers: [Logger, optionsProvider],
       exports: [Logger]
     };
   }
 
+  static forRootAsync(options: LoggerModuleAsyncOptions): DynamicModule {
+    const optionsProvider: Provider<Params> = {
+      provide: OPTIONS_PROVIDER_TOKEN,
+      useFactory: options.useFactory,
+      inject: options.inject
+    };
+
+    return {
+      module: LoggerCoreModule,
+      imports: options.imports,
+      providers: options.providers
+        ? [Logger, optionsProvider, ...options.providers]
+        : [Logger, optionsProvider],
+      exports: [Logger]
+    };
+  }
+
+  constructor(
+    @Inject(OPTIONS_PROVIDER_TOKEN) private readonly options: Params
+  ) {}
+
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(...createLoggerMiddlewares())
+      .apply(...createLoggerMiddlewares(this.options))
       .forRoutes({ path: "*", method: RequestMethod.ALL });
   }
 }
 
-function createLoggerMiddlewares() {
-  return [
-    ctxMiddleware,
-    expressPinoMiddleware(...rootParams),
-    (
-      req: express.Request,
-      res: express.Response,
-      next: express.NextFunction
-    ) => {
-      setValue(loggerKey, req.log);
-      next();
-    }
-  ];
+function isPassedLogger(
+  params: PassedLogger | LoggerOptions | DestinationStream | null
+): params is PassedLogger {
+  return !!params && "logger" in params;
 }
 
-function hasLoggerParamsPassedLogger(params: Params): params is [PassedLogger] {
-  return params[0] && "logger" in params[0];
+function createLoggerMiddlewares(params: Params) {
+  const middleware = Array.isArray(params)
+    ? pinoHttp(...params)
+    : pinoHttp((params as pinoHttp.Options) || undefined);
+
+  return [ctxMiddleware, middleware, bindLoggerMiddleware];
 }
 
-// Copy from 'express-pino-logger' types because it's not builds to own `.d.ts`
-declare global {
-  namespace Express {
-    interface Request {
-      log: pino.Logger;
-    }
-  }
+function bindLoggerMiddleware(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) {
+  setValue(LOGGER_KEY, req.log);
+  next();
 }
