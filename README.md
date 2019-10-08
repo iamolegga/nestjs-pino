@@ -17,6 +17,8 @@
   <a href="https://snyk.io/test/github/iamolegga/nestjs-pino">
     <img alt="Snyk Vulnerabilities for npm package" src="https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino" />
   </a>
+  <img alt="David" src="https://img.shields.io/david/iamolegga/nestjs-pino">
+  <img alt="Dependabot" src="https://badgen.net/dependabot/iamolegga/nestjs-pino/?icon=dependabot">
   <img alt="Supported platforms: Express & Fastify" src="https://img.shields.io/badge/platforms-Express%20%26%20Fastify-green" />
 </p>
 
