@@ -25,7 +25,7 @@ export type Params =
 
 export interface LoggerModuleAsyncOptions
   extends Pick<ModuleMetadata, "imports" | "providers"> {
-  useFactory: (...args: any[]) => Params;
+  useFactory: (...args: any[]) => Params | Promise<Params>;
   inject?: any[];
 }
 
@@ -139,7 +139,7 @@ class LoggerCoreModule implements NestModule {
   }
 
   static forRootAsync(options: LoggerModuleAsyncOptions): DynamicModule {
-    const optionsProvider: Provider<Params> = {
+    const optionsProvider: Provider<Params | Promise<Params>> = {
       provide: OPTIONS_PROVIDER_TOKEN,
       useFactory: options.useFactory,
       inject: options.inject

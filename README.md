@@ -144,7 +144,7 @@ class MyModule {}
 
 With `LoggerModule.forRootAsync` you can for example import your `ConfigModule` and inject `ConfigService` to use it in `useFactory` method.
 
-`useFactory` should return result typeof arguments of [pino-http](https://github.com/pinojs/pino-http#pinohttpopts-stream) or `null`, example:
+`useFactory` should return result typeof arguments of [pino-http](https://github.com/pinojs/pino-http#pinohttpopts-stream) or `null` or `Promise` of it, example:
 
 ```ts
 import { LoggerModule } from 'nestjs-pino';
@@ -165,7 +165,8 @@ class ConfigModule {}
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: async (config: ConfigService) => {
+        await somePromise();
         return { level: config.level };
       }
     })
