@@ -5,8 +5,8 @@ import { Logger } from "../src";
 export class MyService {
   constructor(private readonly logger: Logger) {}
 
-  getWorld() {
-    this.logger.debug("calling MyService.getWorld");
+  getWorld(...params: any[]) {
+    this.logger.debug("getWorld(%o)", MyService.name, params);
     return "World!";
   }
 }
