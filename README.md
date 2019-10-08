@@ -92,6 +92,21 @@ Output:
 {"level":30,"time":1570470161819,"pid":17383,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53957},"res":{"statusCode":304,"headers":{...}},"responseTime":15,"msg":"request completed","v":1}
 ```
 
+## Comparison with others
+
+There are other Nestjs loggers. The key purposes of this one are:
+  - to be compatible with built in `LoggerService`
+  - to log with JSON (thanks to `pino` - [super fast logger](https://github.com/pinojs/pino/blob/master/docs/benchmarks.md)) ([why JSON?](https://jahed.dev/2018/07/05/always-log-to-json/))
+  - to log every request/response automatically (thanks to `pino-http`)
+  - to bind request data to the logs automatically from any service on any application layer without passing request context
+
+| Logger             | Nest App logger | Logger service | Autobind request data to logs |
+| ------------------ | :-------------: | :------------: | :---------------------------: |
+| nest-morgan        |        -        |       -        |               -               |
+| nest-winston       |        +        |       +        |               -               |
+| nestjs-pino-logger |        +        |       +        |               -               |
+| __nestjs-pino__    |        +        |       +        |               +               |
+
 ## Install
 
 ```sh
