@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/iamolegga/nestjs-pino#readme",
   "dependencies": {
+    "@types/pino-http": "^4.3.2",
     "express-ctx": "^0.1.1",
     "pino-http": "^4.3.0"
   },
@@ -44,7 +45,6 @@
     "@types/jest": "^24.0.18",
     "@types/memorystream": "^0.3.0",
     "@types/node": "^12.7.4",
-    "@types/pino-http": "^4.3.2",
     "@types/supertest": "^2.0.8",
     "coveralls": "^3.0.6",
     "express": "^4.17.1",
