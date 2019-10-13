@@ -1,7 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import { Module, Controller, Get, Injectable } from "@nestjs/common";
-import MemoryStream from "memorystream";
-import request from "supertest";
+import MemoryStream = require("memorystream");
+import * as request from "supertest";
 import { Logger, LoggerModule } from "../src";
 import { platforms } from "./utils/platforms";
 import { fastifyExtraWait } from "./utils/fastifyExtraWait";
