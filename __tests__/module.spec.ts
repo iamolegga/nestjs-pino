@@ -6,8 +6,11 @@ import { Logger, LoggerModule } from "../src";
 import { platforms } from "./utils/platforms";
 import { fastifyExtraWait } from "./utils/fastifyExtraWait";
 import { parseLogs } from "./utils/logs";
+import { __resetOutOfContextForTests } from "../src/PinoLogger";
 
 describe("module initialization", () => {
+  beforeEach(() => __resetOutOfContextForTests());
+
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
       describe("forRoot", () => {

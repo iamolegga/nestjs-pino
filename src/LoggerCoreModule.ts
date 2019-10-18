@@ -14,6 +14,8 @@ import { setValue, middleware as ctxMiddleware } from "express-ctx";
 import { Logger } from "./Logger";
 import { OPTIONS_PROVIDER_TOKEN, LOGGER_KEY } from "./constants";
 import { Params, LoggerModuleAsyncOptions } from "./params";
+import { PinoLogger } from "./PinoLogger";
+import { createProvidersForDecorated } from "./InjectPinoLogger";
 
 @Global()
 @Module({ providers: [Logger], exports: [Logger] })
@@ -24,10 +26,12 @@ export class LoggerCoreModule implements NestModule {
       useValue: options || null
     };
 
+    const decorated = createProvidersForDecorated();
+
     return {
       module: LoggerCoreModule,
-      providers: [Logger, optionsProvider],
-      exports: [Logger]
+      providers: [Logger, ...decorated, PinoLogger, optionsProvider],
+      exports: [Logger, ...decorated, PinoLogger]
     };
   }
 
@@ -38,13 +42,21 @@ export class LoggerCoreModule implements NestModule {
       inject: options.inject
     };
 
+    const decorated = createProvidersForDecorated();
+
+    const providers: any[] = [
+      Logger,
+      ...decorated,
+      PinoLogger,
+      optionsProvider,
+      ...(options.providers || [])
+    ];
+
     return {
       module: LoggerCoreModule,
       imports: options.imports,
-      providers: options.providers
-        ? [Logger, optionsProvider, ...options.providers]
-        : [Logger, optionsProvider],
-      exports: [Logger]
+      providers,
+      exports: [Logger, ...decorated, PinoLogger]
     };
   }
 
