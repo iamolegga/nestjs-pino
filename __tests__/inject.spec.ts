@@ -2,21 +2,22 @@ import { NestFactory } from "@nestjs/core";
 import { Module, Controller, Get, Injectable } from "@nestjs/common";
 import MemoryStream = require("memorystream");
 import * as request from "supertest";
-import * as pino from "pino";
-import { Logger, LoggerModule } from "../src";
+import { PinoLogger, InjectPinoLogger, LoggerModule } from "../src";
 import { platforms } from "./utils/platforms";
 import { fastifyExtraWait } from "./utils/fastifyExtraWait";
 import { parseLogs } from "./utils/logs";
 import { __resetOutOfContextForTests } from "../src/PinoLogger";
 
-describe("pass existing logger", () => {
+describe("InjectPinoLogger", () => {
   beforeEach(() => __resetOutOfContextForTests());
 
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      it("should be used by app and by service", async () => {
+      it("should work", async () => {
         const stream = new MemoryStream();
-        const random = Math.random().toString();
+        const serviceLogMessage = Math.random().toString();
+        const controllerLogMessage = Math.random().toString();
+        const context = Math.random().toString();
         let logs = "";
 
         stream.on("data", (chunk: string) => {
@@ -25,24 +26,31 @@ describe("pass existing logger", () => {
 
         @Injectable()
         class TestService {
-          constructor(private readonly logger: Logger) {}
+          constructor(
+            @InjectPinoLogger() private readonly logger: PinoLogger
+          ) {}
           someMethod() {
-            this.logger.log(random);
+            this.logger.info(serviceLogMessage);
           }
         }
 
         @Controller("/")
         class TestController {
-          constructor(private readonly service: TestService) {}
-          @Get("/")
+          constructor(
+            private readonly service: TestService,
+            @InjectPinoLogger(context) private readonly logger: PinoLogger
+          ) {}
+          @Get()
           get() {
+            this.logger.info({ foo: "bar" }, controllerLogMessage);
+            this.logger.info(controllerLogMessage);
             this.service.someMethod();
             return {};
           }
         }
 
         @Module({
-          imports: [LoggerModule.forRoot({ logger: pino(stream) })],
+          imports: [LoggerModule.forRoot(stream)],
           controllers: [TestController],
           providers: [TestService]
         })
@@ -53,23 +61,38 @@ describe("pass existing logger", () => {
           new PlatformAdapter(),
           { logger: false }
         );
-        app.useLogger(app.get(Logger));
         const server = app.getHttpServer();
 
         await app.init();
         await fastifyExtraWait(PlatformAdapter, app);
+
         await request(server).get("/");
+
         await app.close();
 
         const parsedLogs = parseLogs(logs);
 
-        const serviceLogObject = parsedLogs.find(v => v.msg === random);
+        const serviceLogObject = parsedLogs.find(
+          v => v.msg === serviceLogMessage && v.req && !v.context
+        );
         expect(serviceLogObject).toBeTruthy();
 
-        const appLogObject = parsedLogs.find(log =>
-          log.msg.startsWith("Nest application successfully started")
+        const controllerLogObject1 = parsedLogs.find(
+          v =>
+            v.msg === controllerLogMessage &&
+            v.req &&
+            v.context === context &&
+            (v as any).foo === "bar"
         );
-        expect(appLogObject).toBeTruthy();
+        const controllerLogObject2 = parsedLogs.find(
+          v =>
+            v.msg === controllerLogMessage &&
+            v.req &&
+            v.context === context &&
+            !("foo" in v)
+        );
+        expect(controllerLogObject1).toBeTruthy();
+        expect(controllerLogObject2).toBeTruthy();
       });
     });
   }
