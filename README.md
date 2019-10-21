@@ -137,7 +137,7 @@ Output:
 {"level":30,"time":1570470154405,"pid":17383,"hostname":"my-host","context":"NestApplication","msg":"Nest application successfully started true","v":1}
 
 // Logs by injected Logger and PinoLogger in Services/Controllers
-// Every log has it's request data and unique `req.id` (per )
+// Every log has it's request data and unique `req.id` (per process)
 {"level":30,"time":1570470161805,"pid":17383,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53957},"context":"AppController","msg":"getHello()","v":1}
 {"level":30,"time":1570470161805,"pid":17383,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53957},"context":"MyService","msg":"getWorld([])","v":1}
 
