@@ -1,18 +1,15 @@
 import { Module, DynamicModule } from "@nestjs/common";
 import { DestinationStream, LoggerOptions } from "pino";
-import { PassedLogger, LoggerModuleAsyncOptions } from "./params";
+import { PassedLogger, LoggerModuleAsyncOptions, Params } from "./params";
 import { LoggerCoreModule } from "./LoggerCoreModule";
 
 @Module({})
 export class LoggerModule {
   static forRoot(
-    opts?: PassedLogger | LoggerOptions | DestinationStream
+    opts?: Exclude<Params, [LoggerOptions, DestinationStream]>
   ): DynamicModule;
   static forRoot(opts: LoggerOptions, stream: DestinationStream): DynamicModule;
-  static forRoot(
-    opts?: PassedLogger | LoggerOptions | DestinationStream,
-    stream?: DestinationStream
-  ): DynamicModule {
+  static forRoot(opts?: Params, stream?: DestinationStream): DynamicModule {
     return {
       module: LoggerModule,
       imports: [

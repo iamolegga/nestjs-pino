@@ -5,11 +5,14 @@ import { ModuleMetadata } from "@nestjs/common/interfaces";
 
 export type PassedLogger = { logger: pino.Logger };
 
+export type UseExisting = { useExisting: boolean };
+
 export type Params =
   | null
   | pinoHttp.Options
   | DestinationStream
-  | [pinoHttp.Options, DestinationStream];
+  | [pinoHttp.Options, DestinationStream]
+  | UseExisting;
 
 export interface LoggerModuleAsyncOptions
   extends Pick<ModuleMetadata, "imports" | "providers"> {
@@ -17,8 +20,6 @@ export interface LoggerModuleAsyncOptions
   inject?: any[];
 }
 
-export function isPassedLogger(
-  params: PassedLogger | pino.LoggerOptions | pino.DestinationStream | null
-): params is PassedLogger {
+export function isPassedLogger(params: Params): params is PassedLogger {
   return !!params && "logger" in params;
 }
