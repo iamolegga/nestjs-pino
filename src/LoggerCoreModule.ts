@@ -66,22 +66,28 @@ export class LoggerCoreModule implements NestModule {
 
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(...createLoggerMiddlewares(this.options))
+      .apply(...createLoggerMiddlewares(this.options || {}))
       .forRoutes({ path: "*", method: RequestMethod.ALL });
   }
 }
 
-function createLoggerMiddlewares(params: Params) {
-  const middleware = Array.isArray(params)
-    ? pinoHttp(...params)
-    : pinoHttp((params as pinoHttp.Options) || undefined);
+function createLoggerMiddlewares(params: Exclude<Params, null>) {
+  if (Array.isArray(params)) {
+    return [ctxMiddleware, pinoHttp(...params), bindLoggerMiddleware];
+  }
 
-  return [ctxMiddleware, middleware, bindLoggerMiddleware];
+  if ("useExisting" in params) {
+    return [ctxMiddleware, bindLoggerMiddleware];
+  }
+
+  // FIXME: params type here is pinoHttp.Options | pino.DestinationStream
+  // pinoHttp has two overloads, each of them takes those types
+  return [ctxMiddleware, pinoHttp(params as any), bindLoggerMiddleware];
 }
 
 function bindLoggerMiddleware(
   req: express.Request,
-  res: express.Response,
+  _res: express.Response,
   next: express.NextFunction
 ) {
   setValue(LOGGER_KEY, req.log);

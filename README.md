@@ -396,3 +396,24 @@ __A__: Pino built-in methods are not compatible with NestJS built-in `LoggerServ
 | warn          | warn                | warn            |
 | error         | error               | error           |
 | fatal         | fatal               | -               |
+
+---
+
+__Q__: _Fastify already includes pino, and I want to configure it on `Adapter` level, and use this config for logger_
+
+__A__: You can do it by providing `useExisting: true`. But there is one caveat:
+
+Fastify creates logger with your config per every request. And this logger is used by `Logger`/`PinoLogger` services inside that context underhood.
+
+But Nest Application has another contexts of execution, for example [lifecycle events](https://docs.nestjs.com/fundamentals/lifecycle-events), where you still may want to use logger. For that `Logger`/`PinoLogger` services use separate `pino` instance with config, that provided via `forRoot`/`forRootAsync` methods.
+
+**So, when you want to configure pino via `FastifyAdapter`, there is no way to get back this config from it and pass to that _out of context_ logger.**
+
+And if you not pass config via `forRoot`/`forRootAsync` _out of context_ logger will be instantiated with default params. So if you want to configure it anyway with the same options, then you have to provide the same config. And then If you are already provide that then you don't have to duplicate your code and provide pino config via fastify.
+
+So these property (`useExisting: true`) is not recommended and useful only for cases when:
+
+- this logger is not using for lifecycle events and application level logging in Nest apps based on fastify
+- pino using with default params in Nest apps based on fastify
+
+All the other cases are lead to either code duplication or unexpected behaviour.

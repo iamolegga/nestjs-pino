@@ -32,6 +32,9 @@ export class PinoLogger implements PinoMethods {
         outOfContext = pino(...options);
       } else if (isPassedLogger(options)) {
         outOfContext = options.logger;
+      } else if (options && "useExisting" in options) {
+        const { useExisting, ...rest } = options;
+        outOfContext = pino(rest);
       } else {
         outOfContext = pino(options || undefined);
       }
