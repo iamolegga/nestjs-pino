@@ -1,7 +1,7 @@
 export type LogObject = {
   msg: string;
   req?: { id: number };
-  context?: string;
+  name?: string;
   trace?: string;
 };
 

@@ -73,7 +73,7 @@ describe("InjectPinoLogger", () => {
         const parsedLogs = parseLogs(logs);
 
         const serviceLogObject = parsedLogs.find(
-          v => v.msg === serviceLogMessage && v.req && !v.context
+          v => v.msg === serviceLogMessage && v.req && !v.name
         );
         expect(serviceLogObject).toBeTruthy();
 
@@ -81,14 +81,14 @@ describe("InjectPinoLogger", () => {
           v =>
             v.msg === controllerLogMessage &&
             v.req &&
-            v.context === context &&
+            v.name === context &&
             (v as any).foo === "bar"
         );
         const controllerLogObject2 = parsedLogs.find(
           v =>
             v.msg === controllerLogMessage &&
             v.req &&
-            v.context === context &&
+            v.name === context &&
             !("foo" in v)
         );
         expect(controllerLogObject1).toBeTruthy();

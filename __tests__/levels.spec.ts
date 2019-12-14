@@ -94,22 +94,22 @@ describe(`${Logger.name} levels`, () => {
           const parsedLogs = parseLogs(logs);
 
           const serviceLogObject = parsedLogs.find(
-            v => v.msg === serviceLogMessage && v.req && !v.context && !v.trace
+            v => v.msg === serviceLogMessage && v.req && !v.name && !v.trace
           );
           expect(serviceLogObject).toBeTruthy();
 
           if (pinoLevel === "error") {
             const serviceLogObjectWithTrace = parsedLogs.find(
-              v => v.msg === serviceLogMessage && v.req && !v.context && v.trace
+              v => v.msg === serviceLogMessage && v.req && !v.name && v.trace
             );
             expect(serviceLogObjectWithTrace).toBeTruthy();
             const serviceLogObjectWithTraceAndCtx = parsedLogs.find(
-              v => v.msg === serviceLogMessage && v.req && v.context && v.trace
+              v => v.msg === serviceLogMessage && v.req && v.name && v.trace
             );
             expect(serviceLogObjectWithTraceAndCtx).toBeTruthy();
           } else {
             const serviceLogObjectWithContext = parsedLogs.find(
-              v => v.msg === serviceLogMessage && v.req && v.context && !v.trace
+              v => v.msg === serviceLogMessage && v.req && v.name && !v.trace
             );
             expect(serviceLogObjectWithContext).toBeTruthy();
           }

@@ -86,9 +86,9 @@ export class PinoLogger implements PinoMethods {
     if (context) {
       const firstArg = args[0];
       if (typeof firstArg === "object") {
-        args = [Object.assign({ context }, firstArg), ...args.slice(1)];
+        args = [Object.assign({ name: context }, firstArg), ...args.slice(1)];
       } else {
-        args = [{ context }, ...args];
+        args = [{ name: context }, ...args];
       }
     }
 

@@ -7,7 +7,7 @@ export class Logger implements LoggerService {
 
   verbose(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.trace({ context }, message, ...args);
+      this.logger.trace({ name: context }, message, ...args);
     } else {
       this.logger.trace(message, ...args);
     }
@@ -15,7 +15,7 @@ export class Logger implements LoggerService {
 
   debug(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.debug({ context }, message, ...args);
+      this.logger.debug({ name: context }, message, ...args);
     } else {
       this.logger.debug(message, ...args);
     }
@@ -23,7 +23,7 @@ export class Logger implements LoggerService {
 
   log(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.info({ context }, message, ...args);
+      this.logger.info({ name: context }, message, ...args);
     } else {
       this.logger.info(message, ...args);
     }
@@ -31,7 +31,7 @@ export class Logger implements LoggerService {
 
   warn(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.warn({ context }, message, ...args);
+      this.logger.warn({ name: context }, message, ...args);
     } else {
       this.logger.warn(message, ...args);
     }
@@ -39,7 +39,7 @@ export class Logger implements LoggerService {
 
   error(message: any, trace?: string, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.error({ context, trace }, message, ...args);
+      this.logger.error({ name: context, trace }, message, ...args);
     } else if (trace) {
       this.logger.error({ trace }, message, ...args);
     } else {
