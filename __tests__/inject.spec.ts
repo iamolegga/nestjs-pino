@@ -50,7 +50,7 @@ describe("InjectPinoLogger", () => {
         }
 
         @Module({
-          imports: [LoggerModule.forRoot(stream)],
+          imports: [LoggerModule.forRoot({ pinoHttp: stream })],
           controllers: [TestController],
           providers: [TestService]
         })

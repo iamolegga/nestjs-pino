@@ -18,7 +18,7 @@ describe("useExisting property", () => {
   beforeEach(() => __resetOutOfContextForTests());
 
   describe(FastifyAdapter.name, () => {
-    it("should use adapter logger in req context and dafault beyond", async () => {
+    it("should use adapter logger in req context and default beyond", async () => {
       const stream = new MemoryStream();
       const random = Math.random().toString();
       const moduleInitMessage = "module initiated";

@@ -42,7 +42,9 @@ describe("pass existing logger", () => {
         }
 
         @Module({
-          imports: [LoggerModule.forRoot({ logger: pino(stream) })],
+          imports: [
+            LoggerModule.forRoot({ pinoHttp: { logger: pino(stream) } })
+          ],
           controllers: [TestController],
           providers: [TestService]
         })

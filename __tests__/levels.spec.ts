@@ -70,7 +70,9 @@ describe(`${Logger.name} levels`, () => {
           }
 
           @Module({
-            imports: [LoggerModule.forRoot({ level: pinoLevel }, stream)],
+            imports: [
+              LoggerModule.forRoot({ pinoHttp: [{ level: pinoLevel }, stream] })
+            ],
             controllers: [TestController],
             providers: [TestService]
           })
@@ -172,7 +174,9 @@ describe(`${PinoLogger.name} levels`, () => {
           }
 
           @Module({
-            imports: [LoggerModule.forRoot({ level: pinoLevel }, stream)],
+            imports: [
+              LoggerModule.forRoot({ pinoHttp: [{ level: pinoLevel }, stream] })
+            ],
             controllers: [TestController],
             providers: [TestService]
           })

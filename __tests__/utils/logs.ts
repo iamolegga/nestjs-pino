@@ -1,6 +1,7 @@
 export type LogObject = {
   msg: string;
   req?: { id: number };
+  res?: object;
   context?: string;
   trace?: string;
 };

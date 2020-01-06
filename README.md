@@ -169,7 +169,7 @@ npm i nestjs-pino
 
 ## Register module
 
-### Default params
+### Zero configuration
 
 Just import `LoggerModule` to your module:
 
@@ -183,25 +183,73 @@ import { LoggerModule } from 'nestjs-pino';
 class MyModule {}
 ```
 
+### Configuration params
+
+`nestjs-pino` can be configured with params object of next interface:
+
+```ts
+interface Params {
+  /**
+   * Optional parameters for `pino-http` module
+   * @see https://github.com/pinojs/pino-http#pinohttpopts-stream
+   */
+  pinoHttp?:
+    | pinoHttp.Options
+    | DestinationStream
+    | [pinoHttp.Options, DestinationStream];
+
+  /**
+   * Optional parameter for routing. It should implement interface of
+   * parameters of NestJS buil-in `MiddlewareConfigProxy['forRoutes']`.
+   * @see https://docs.nestjs.com/middleware#applying-middleware
+   * It can be used for disabling automatic req/res logs (see above).
+   * Keep in mind that it will remove context data from logs that are called
+   * inside not included or excluded routes and controlles.
+   */
+  forRoutes?: Parameters<MiddlewareConfigProxy["forRoutes"]>;
+
+  /**
+   * Optional parameter for routing. It should implement interface of
+   * parameters of NestJS buil-in `MiddlewareConfigProxy['exclude']`.
+   * @see https://docs.nestjs.com/middleware#applying-middleware
+   * It can be used for disabling automatic req/res logs (see above).
+   * Keep in mind that it will remove context data from logs that are called
+   * inside not included or excluded routes and controlles.
+   */
+  exclude?: Parameters<MiddlewareConfigProxy["exclude"]>;
+
+  /**
+   * Optional parameter to skip `pino` configuration in case you are using
+   * Fastify adapter, and already configuring it on adapter level.
+   * Pros and cons of this approach are descibed in the last section.
+   */
+  useExisting?: true;
+}
+```
+
 ### Synchronous configuration
 
-`LoggerModule.forRoot` has the same API as [pino-http](https://github.com/pinojs/pino-http#pinohttpopts-stream):
+Use `LoggerModule.forRoot` method with argument of [Params interface](#configuration-params):
 
 ```ts
 import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [
-    LoggerModule.forRoot(
-      {
-        name: 'add some name to every JSON line',
-        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
-        prettyPrint: process.env.NODE_ENV !== 'production',
-        useLevelLabels: true,
-        // and all the others...
-      },
-      someWritableStream
-    )
+    LoggerModule.forRoot({
+      pinoHttp: [
+        {
+          name: 'add some name to every JSON line',
+          level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+          prettyPrint: process.env.NODE_ENV !== 'production',
+          useLevelLabels: true,
+          // and all the others...
+        },
+        someWritableStream
+      ],
+      forRoutes: [MyController],
+      exclude: [{ method: RequestMethod.ALL, path: "check" }]
+    })
   ],
   ...
 })
@@ -213,10 +261,7 @@ class MyModule {}
 
 With `LoggerModule.forRootAsync` you can, for example, import your `ConfigModule` and inject `ConfigService` to use it in `useFactory` method.
 
-`useFactory` should return either:
-- `null`
-- or `typeof arguments` of [pino-http](https://github.com/pinojs/pino-http#pinohttpopts-stream)
-- or `Promise` of it
+`useFactory` should return object with [Params interface](#configuration-params) or undefined
 
 Here's an example:
 
@@ -241,7 +286,9 @@ class ConfigModule {}
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => {
         await somePromise();
-        return { level: config.level };
+        return {
+          pinoHttp: { level: config.level },
+        };
       }
     })
   ],
@@ -267,7 +314,9 @@ class ConfigService {
       providers: [ConfigService],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        return [{ level: config.level }, config.stream];
+        return {
+          pinoHttp: [{ level: config.level }, config.stream],
+        };
       }
     })
   ],
@@ -291,7 +340,7 @@ const dest = pino.extreme();
 const logger = pino(dest);
 
 @Module({
-  imports: [LoggerModule.forRoot({ logger })],
+  imports: [LoggerModule.forRoot({ pinoHttp: { logger } })],
   ...
 })
 class MyModule {}
@@ -363,6 +412,13 @@ import { Logger } from 'nestjs-pino';
 const app = await NestFactory.create(MyModule, { logger: false });
 app.useLogger(app.get(Logger));
 ```
+
+## Migrating
+
+### v1
+
+- All parameters of v.0 are moved to `pinoHttp` property (except `useExisting`).
+- `useExisting` now accept only `true`, because `false` does not make any sense
 
 ## FAQ
 
