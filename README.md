@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="NestJS-Pino logo" src="./logo.png"/>
+  <img alt="NestJS-Pino logo" src="https://github.com/iamolegga/nestjs-pino/blob/master/logo.png"/>
 </p>
 
 <h1 align="center">NestJS-Pino</h1>

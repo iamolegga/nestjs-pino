@@ -1,5 +1,11 @@
+__tests__/
+.github/
 coverage/
+dist/*.tsbuildinfo
 example/
 src/
+.mergify.yml
 .travis.yml
+CONTRIBUTING.md
+logo.png
 README.md
