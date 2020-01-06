@@ -4,7 +4,9 @@ import { LoggerModule } from "../src";
 import { MyService } from "./my.service";
 
 @Module({
-  imports: [LoggerModule.forRoot({ level: process.env.LOG_LEVEL })],
+  imports: [
+    LoggerModule.forRoot({ pinoHttp: { level: process.env.LOG_LEVEL } })
+  ],
   controllers: [AppController],
   providers: [MyService]
 })
