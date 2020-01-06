@@ -40,7 +40,7 @@ describe("module initialization", () => {
           await fastifyExtraWait(PlatformAdapter, app);
         });
 
-        it("should work properly with single param", async () => {
+        it("should work properly with single value of `httpPino` property", async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
           let logs = "";
@@ -59,7 +59,7 @@ describe("module initialization", () => {
           }
 
           @Module({
-            imports: [LoggerModule.forRoot(stream)],
+            imports: [LoggerModule.forRoot({ pinoHttp: stream })],
             controllers: [TestController]
           })
           class TestModule {}
@@ -82,7 +82,7 @@ describe("module initialization", () => {
           expect(logObject).toBeTruthy();
         });
 
-        it("should work properly with two params", async () => {
+        it("should work properly with array as value of `httpPino` property", async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
           let logs = "";
@@ -101,7 +101,9 @@ describe("module initialization", () => {
           }
 
           @Module({
-            imports: [LoggerModule.forRoot({ level: "debug" }, stream)],
+            imports: [
+              LoggerModule.forRoot({ pinoHttp: [{ level: "debug" }, stream] })
+            ],
             controllers: [TestController]
           })
           class TestModule {}
@@ -126,33 +128,7 @@ describe("module initialization", () => {
       });
 
       describe("forRootAsync", () => {
-        it("should compile when useFactory returns null", async () => {
-          @Controller("/")
-          class TestController {
-            constructor(private readonly logger: Logger) {}
-            @Get("/")
-            get() {
-              this.logger.log("");
-              return {};
-            }
-          }
-
-          @Module({
-            imports: [LoggerModule.forRootAsync({ useFactory: () => null })],
-            controllers: [TestController]
-          })
-          class TestModule {}
-
-          const app = await NestFactory.create(
-            TestModule,
-            new PlatformAdapter(),
-            { logger: false }
-          );
-          await app.init();
-          await fastifyExtraWait(PlatformAdapter, app);
-        });
-
-        it("should work properly when useFactory returns single params", async () => {
+        it("should work properly when useFactory returns single value of `httpPino` property", async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
           let logs = "";
@@ -188,7 +164,7 @@ describe("module initialization", () => {
                 imports: [ConfigModule],
                 inject: [ConfigService],
                 useFactory: (config: ConfigService) => {
-                  return config.stream;
+                  return { pinoHttp: config.stream };
                 }
               })
             ],
@@ -214,7 +190,7 @@ describe("module initialization", () => {
           expect(logObject).toBeTruthy();
         });
 
-        it("should work properly when useFactory returns array of two params", async () => {
+        it("should work properly when useFactory returns array as value of `httpPino` property", async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
           let logs = "";
@@ -251,7 +227,7 @@ describe("module initialization", () => {
                 imports: [ConfigModule],
                 inject: [ConfigService],
                 useFactory: (config: ConfigService) => {
-                  return [{ level: config.level }, config.stream];
+                  return { pinoHttp: [{ level: config.level }, config.stream] };
                 }
               })
             ],
@@ -307,7 +283,7 @@ describe("module initialization", () => {
                 providers: [ConfigService],
                 inject: [ConfigService],
                 useFactory: (config: ConfigService) => {
-                  return config.stream;
+                  return { pinoHttp: config.stream };
                 }
               })
             ],
@@ -370,7 +346,7 @@ describe("module initialization", () => {
                 inject: [ConfigService],
                 useFactory: async (config: ConfigService) => {
                   await new Promise(r => setTimeout(r, 10));
-                  return config.stream;
+                  return { pinoHttp: config.stream };
                 }
               })
             ],

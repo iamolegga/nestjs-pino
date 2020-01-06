@@ -1,7 +1,7 @@
 import { Injectable, Inject, Scope } from "@nestjs/common";
 import * as pino from "pino";
 import { getValue } from "express-ctx";
-import { OPTIONS_PROVIDER_TOKEN, LOGGER_KEY } from "./constants";
+import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from "./constants";
 import { Params, isPassedLogger } from "./params";
 
 interface PinoMethods
@@ -26,17 +26,14 @@ export function __resetOutOfContextForTests() {
 export class PinoLogger implements PinoMethods {
   private context = "";
 
-  constructor(@Inject(OPTIONS_PROVIDER_TOKEN) options: Params) {
+  constructor(@Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp }: Params) {
     if (!outOfContext) {
-      if (Array.isArray(options)) {
-        outOfContext = pino(...options);
-      } else if (isPassedLogger(options)) {
-        outOfContext = options.logger;
-      } else if (options && "useExisting" in options) {
-        const { useExisting, ...rest } = options;
-        outOfContext = pino(rest);
+      if (Array.isArray(pinoHttp)) {
+        outOfContext = pino(...pinoHttp);
+      } else if (isPassedLogger(pinoHttp)) {
+        outOfContext = pinoHttp.logger;
       } else {
-        outOfContext = pino(options || undefined);
+        outOfContext = pino(pinoHttp);
       }
     }
   }
