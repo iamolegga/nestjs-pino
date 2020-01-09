@@ -15,8 +15,7 @@ deploy:
 script:
   - npm run build
   - npm run test
-after_deploy:
-  - npm run report
+  - if [ "$TRAVIS_BRANCH" = "master" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then npm run report; fi
 branches:
   except:
     - "/^v\\d+\\.\\d+\\.\\d+$/"
