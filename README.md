@@ -480,7 +480,7 @@ So these property (`useExisting: true`) is not recommended and useful only for c
 
 All the other cases are lead to either code duplication or unexpected behaviour.
 
-<h2 align="center">Do you use this library?<br/>Don't be shy to give it a star! ★</h1>
+<h2 align="center">Do you use this library?<br/>Don't be shy to give it a star! ★</h2>
 
 Also if you are into NestJS ecosystem you may be interested in one of my other libs:
 
