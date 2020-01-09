@@ -1,13 +1,22 @@
-import { Injectable, LoggerService } from "@nestjs/common";
+import { Injectable, LoggerService, Inject } from "@nestjs/common";
 import { PinoLogger } from "./PinoLogger";
+import { PARAMS_PROVIDER_TOKEN } from "./constants";
+import { Params } from "./params";
 
 @Injectable()
 export class Logger implements LoggerService {
-  constructor(private readonly logger: PinoLogger) {}
+  private readonly contextName: string;
+
+  constructor(
+    private readonly logger: PinoLogger,
+    @Inject(PARAMS_PROVIDER_TOKEN) { renameContext }: Params
+  ) {
+    this.contextName = renameContext || "context";
+  }
 
   verbose(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.trace({ context }, message, ...args);
+      this.logger.trace({ [this.contextName]: context }, message, ...args);
     } else {
       this.logger.trace(message, ...args);
     }
@@ -15,7 +24,7 @@ export class Logger implements LoggerService {
 
   debug(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.debug({ context }, message, ...args);
+      this.logger.debug({ [this.contextName]: context }, message, ...args);
     } else {
       this.logger.debug(message, ...args);
     }
@@ -23,7 +32,7 @@ export class Logger implements LoggerService {
 
   log(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.info({ context }, message, ...args);
+      this.logger.info({ [this.contextName]: context }, message, ...args);
     } else {
       this.logger.info(message, ...args);
     }
@@ -31,7 +40,7 @@ export class Logger implements LoggerService {
 
   warn(message: any, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.warn({ context }, message, ...args);
+      this.logger.warn({ [this.contextName]: context }, message, ...args);
     } else {
       this.logger.warn(message, ...args);
     }
@@ -39,7 +48,11 @@ export class Logger implements LoggerService {
 
   error(message: any, trace?: string, context?: string, ...args: any[]) {
     if (context) {
-      this.logger.error({ context, trace }, message, ...args);
+      this.logger.error(
+        { [this.contextName]: context, trace },
+        message,
+        ...args
+      );
     } else if (trace) {
       this.logger.error({ trace }, message, ...args);
     } else {

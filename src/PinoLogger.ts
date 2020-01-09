@@ -25,8 +25,11 @@ export function __resetOutOfContextForTests() {
 @Injectable({ scope: Scope.TRANSIENT })
 export class PinoLogger implements PinoMethods {
   private context = "";
+  private readonly contextName: string;
 
-  constructor(@Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp }: Params) {
+  constructor(
+    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params
+  ) {
     if (!outOfContext) {
       if (Array.isArray(pinoHttp)) {
         outOfContext = pino(...pinoHttp);
@@ -36,6 +39,8 @@ export class PinoLogger implements PinoMethods {
         outOfContext = pino(pinoHttp);
       }
     }
+
+    this.contextName = renameContext || "context";
   }
 
   trace(msg: string, ...args: any[]): void;
@@ -83,9 +88,12 @@ export class PinoLogger implements PinoMethods {
     if (context) {
       const firstArg = args[0];
       if (typeof firstArg === "object") {
-        args = [Object.assign({ context }, firstArg), ...args.slice(1)];
+        args = [
+          Object.assign({ [this.contextName]: context }, firstArg),
+          ...args.slice(1)
+        ];
       } else {
-        args = [{ context }, ...args];
+        args = [{ [this.contextName]: context }, ...args];
       }
     }
 

@@ -4,6 +4,7 @@ export type LogObject = {
   res?: object;
   context?: string;
   trace?: string;
+  [key: string]: any;
 };
 
 export function parseLogs(logs: string): LogObject[] {
