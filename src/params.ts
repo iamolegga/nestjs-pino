@@ -16,6 +16,7 @@ export interface Params {
   exclude?: Parameters<MiddlewareConfigProxy["exclude"]>;
   forRoutes?: Parameters<MiddlewareConfigProxy["forRoutes"]>;
   useExisting?: true;
+  renameContext?: string;
 }
 
 export interface LoggerModuleAsyncParams

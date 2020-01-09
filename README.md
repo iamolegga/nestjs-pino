@@ -224,6 +224,14 @@ interface Params {
    * Pros and cons of this approach are descibed in the last section.
    */
   useExisting?: true;
+
+  /**
+   * Optional parameter to change property name `context` in resulted logs,
+   * so logs will be like:
+   * {"level":30, ... "RENAME_CONTEXT_VALUE_HERE":"AppController" }
+   * Works with both `Logger` and `PinoLogger`
+   */
+  renameContext?: string;
 }
 ```
 
