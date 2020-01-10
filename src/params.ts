@@ -21,7 +21,7 @@ export interface Params {
 }
 
 export interface GlobalContext {
-  [key: string]: string | number;
+  [key: string]: string | number | boolean | null;
 }
 
 export interface LoggerModuleAsyncParams
