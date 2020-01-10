@@ -2,7 +2,7 @@ import { Injectable, Inject, Scope } from "@nestjs/common";
 import * as pino from "pino";
 import { getValue } from "express-ctx";
 import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from "./constants";
-import { Params, isPassedLogger } from "./params";
+import { Params, isPassedLogger, GlobalContext } from "./params";
 
 interface PinoMethods
   extends Pick<
@@ -25,11 +25,14 @@ export function __resetOutOfContextForTests() {
 @Injectable({ scope: Scope.TRANSIENT })
 export class PinoLogger implements PinoMethods {
   private context = "";
+  private globalContext?: GlobalContext;
   private readonly contextName: string;
 
   constructor(
-    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params
+    @Inject(PARAMS_PROVIDER_TOKEN)
+    { pinoHttp, renameContext, globalContext }: Params
   ) {
+    this.globalContext = globalContext;
     if (!outOfContext) {
       if (Array.isArray(pinoHttp)) {
         outOfContext = pino(...pinoHttp);
@@ -83,17 +86,26 @@ export class PinoLogger implements PinoMethods {
     this.context = value;
   }
 
+  private getWholeContext() {
+    const wholeContext: object = {
+      ...(this.context && { [this.contextName]: this.context }),
+      ...this.globalContext
+    };
+
+    if (Object.keys(wholeContext).length !== 0) {
+      return wholeContext;
+    }
+    return undefined;
+  }
+
   private call(method: pino.Level, ...args: Parameters<LoggerFn>) {
-    const context = this.context;
-    if (context) {
-      const firstArg = args[0];
+    const wholeContext = this.getWholeContext();
+    if (wholeContext) {
+      const [firstArg, ...restArgs] = args;
       if (typeof firstArg === "object") {
-        args = [
-          Object.assign({ [this.contextName]: context }, firstArg),
-          ...args.slice(1)
-        ];
+        args = [{ ...firstArg, ...wholeContext }, ...restArgs];
       } else {
-        args = [{ [this.contextName]: context }, ...args];
+        args = [wholeContext, ...args];
       }
     }
 

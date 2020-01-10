@@ -17,6 +17,11 @@ export interface Params {
   forRoutes?: Parameters<MiddlewareConfigProxy["forRoutes"]>;
   useExisting?: true;
   renameContext?: string;
+  globalContext?: GlobalContext;
+}
+
+export interface GlobalContext {
+  [key: string]: string | number;
 }
 
 export interface LoggerModuleAsyncParams
