@@ -232,6 +232,18 @@ interface Params {
    * Works with both `Logger` and `PinoLogger`
    */
   renameContext?: string;
+  /**
+   * Optional parameter to set global properties to result object,
+   * so logs will be like:
+   * {"level":30, ..., ...globalContext }
+   * It can be used with one data base for all microservices logs,
+   * when you have to filter by microservice name, so you can pass name to global context
+   * and it's appear in all of your logs thriugh whole microservice.
+   * Works only with `PinoLogger`.
+   * Has high priority in order with context and data,
+   * so can not be rewritten by them in case of namespacing conflicts.
+   */
+  globalContext?: { [key: string]: string | number | boolean | null };
 }
 ```
 
