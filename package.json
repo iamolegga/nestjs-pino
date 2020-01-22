@@ -54,7 +54,7 @@
     "rxjs": "^6.5.3",
     "supertest": "^4.0.2",
     "ts-jest": "^24.0.2",
-    "tslint": "^5.19.0",
+    "tslint": "^6.0.0",
     "typescript": "^3.6.2"
   },
   "jest": {
