@@ -33,7 +33,7 @@
   "dependencies": {
     "@types/pino-http": "^4.3.2",
     "express-ctx": "^0.1.1",
-    "pino-http": "^4.3.0"
+    "pino-http": "^5.0.0"
   },
   "devDependencies": {
     "@nestjs/common": "^6.6.7",
