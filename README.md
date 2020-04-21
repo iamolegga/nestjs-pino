@@ -408,6 +408,23 @@ export class MyService {
 }
 ```
 
+#### Testing a class that uses @InjectPinoLogger
+
+This package exposes a getLoggerToken() function that returns a prepared injection token based on the provided context. 
+Using this token, you can easily provide a mock implementation of the logger using any of the standard custom provider techniques, including useClass, useValue, and useFactory.
+
+```ts
+  const module: TestingModule = await Test.createTestingModule({
+    providers: [
+      MyService,
+      {
+        provide: getLoggerToken(MyService.name),
+        useValue: mockLogger,
+      },
+    ],
+  }).compile();
+```
+
 ## Usage as NestJS app logger
 
 According to [official docs](https://docs.nestjs.com/techniques/logger#dependency-injection), loggers with Dependency injection should be set via following construction:
