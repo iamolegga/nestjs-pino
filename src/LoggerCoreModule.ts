@@ -1,21 +1,16 @@
+import * as express from 'express';
+import { middleware as ctxMiddleware, setValue } from 'express-ctx';
+import * as pinoHttp from 'pino-http';
+
 import {
-  Global,
-  Module,
-  DynamicModule,
-  NestModule,
-  MiddlewareConsumer,
-  RequestMethod,
-  Inject,
+    DynamicModule, Global, Inject, MiddlewareConsumer, Module, NestModule, RequestMethod
 } from '@nestjs/common';
 import { Provider } from '@nestjs/common/interfaces';
-import * as express from 'express';
-import * as pinoHttp from 'pino-http';
-import { setValue, middleware as ctxMiddleware } from 'express-ctx';
-import { Logger } from './Logger';
-import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from './constants';
-import { Params, LoggerModuleAsyncParams } from './params';
-import { PinoLogger } from './PinoLogger';
+
+import { LOGGER_KEY, PARAMS_PROVIDER_TOKEN } from './constants';
 import { createProvidersForDecorated } from './InjectPinoLogger';
+import { LoggerModuleAsyncParams, Params } from './params';
+import { Logger, PinoLogger } from './services';
 
 const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
 

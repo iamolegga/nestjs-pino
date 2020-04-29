@@ -1,13 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { Module, Controller, Get, Injectable } from '@nestjs/common';
-import MemoryStream = require('memorystream');
 import * as request from 'supertest';
+
+import { Controller, Get, Injectable, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
 import { Logger, LoggerModule } from '../src';
-import { platforms } from './utils/platforms';
+import { __resetOutOfContextForTests } from '../src/services';
 import { fastifyExtraWait } from './utils/fastifyExtraWait';
 import { parseLogs } from './utils/logs';
-import { __resetOutOfContextForTests } from '../src/PinoLogger';
+import { platforms } from './utils/platforms';
 
+import MemoryStream = require('memorystream');
 describe('module initialization', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
@@ -27,14 +29,14 @@ describe('module initialization', () => {
 
           @Module({
             imports: [LoggerModule.forRoot()],
-            controllers: [TestController]
+            controllers: [TestController],
           })
           class TestModule {}
 
           const app = await NestFactory.create(
             TestModule,
             new PlatformAdapter(),
-            { logger: false }
+            { logger: false },
           );
           await app.init();
           await fastifyExtraWait(PlatformAdapter, app);
@@ -60,14 +62,14 @@ describe('module initialization', () => {
 
           @Module({
             imports: [LoggerModule.forRoot({ pinoHttp: stream })],
-            controllers: [TestController]
+            controllers: [TestController],
           })
           class TestModule {}
 
           const app = await NestFactory.create(
             TestModule,
             new PlatformAdapter(),
-            { logger: false }
+            { logger: false },
           );
           const server = app.getHttpServer();
 
@@ -78,7 +80,7 @@ describe('module initialization', () => {
           await app.close();
 
           const parsedLogs = parseLogs(logs);
-          const logObject = parsedLogs.find(v => v.msg === random);
+          const logObject = parsedLogs.find((v) => v.msg === random);
           expect(logObject).toBeTruthy();
         });
 
@@ -102,16 +104,16 @@ describe('module initialization', () => {
 
           @Module({
             imports: [
-              LoggerModule.forRoot({ pinoHttp: [{ level: 'debug' }, stream] })
+              LoggerModule.forRoot({ pinoHttp: [{ level: 'debug' }, stream] }),
             ],
-            controllers: [TestController]
+            controllers: [TestController],
           })
           class TestModule {}
 
           const app = await NestFactory.create(
             TestModule,
             new PlatformAdapter(),
-            { logger: false }
+            { logger: false },
           );
           const server = app.getHttpServer();
 
@@ -122,7 +124,7 @@ describe('module initialization', () => {
           await app.close();
 
           const parsedLogs = parseLogs(logs);
-          const logObject = parsedLogs.find(v => v.msg === random);
+          const logObject = parsedLogs.find((v) => v.msg === random);
           expect(logObject).toBeTruthy();
         });
       });
@@ -154,7 +156,7 @@ describe('module initialization', () => {
 
           @Module({
             providers: [ConfigService],
-            exports: [ConfigService]
+            exports: [ConfigService],
           })
           class ConfigModule {}
 
@@ -165,17 +167,17 @@ describe('module initialization', () => {
                 inject: [ConfigService],
                 useFactory: (config: ConfigService) => {
                   return { pinoHttp: config.stream };
-                }
-              })
+                },
+              }),
             ],
-            controllers: [TestController]
+            controllers: [TestController],
           })
           class TestModule {}
 
           const app = await NestFactory.create(
             TestModule,
             new PlatformAdapter(),
-            { logger: false }
+            { logger: false },
           );
           const server = app.getHttpServer();
 
@@ -186,7 +188,7 @@ describe('module initialization', () => {
           await app.close();
 
           const parsedLogs = parseLogs(logs);
-          const logObject = parsedLogs.find(v => v.msg === random);
+          const logObject = parsedLogs.find((v) => v.msg === random);
           expect(logObject).toBeTruthy();
         });
 
@@ -217,7 +219,7 @@ describe('module initialization', () => {
 
           @Module({
             providers: [ConfigService],
-            exports: [ConfigService]
+            exports: [ConfigService],
           })
           class ConfigModule {}
 
@@ -228,17 +230,17 @@ describe('module initialization', () => {
                 inject: [ConfigService],
                 useFactory: (config: ConfigService) => {
                   return { pinoHttp: [{ level: config.level }, config.stream] };
-                }
-              })
+                },
+              }),
             ],
-            controllers: [TestController]
+            controllers: [TestController],
           })
           class TestModule {}
 
           const app = await NestFactory.create(
             TestModule,
             new PlatformAdapter(),
-            { logger: false }
+            { logger: false },
           );
           const server = app.getHttpServer();
 
@@ -249,7 +251,7 @@ describe('module initialization', () => {
           await app.close();
 
           const parsedLogs = parseLogs(logs);
-          const logObject = parsedLogs.find(v => v.msg === random);
+          const logObject = parsedLogs.find((v) => v.msg === random);
           expect(logObject).toBeTruthy();
         });
 
@@ -284,17 +286,17 @@ describe('module initialization', () => {
                 inject: [ConfigService],
                 useFactory: (config: ConfigService) => {
                   return { pinoHttp: config.stream };
-                }
-              })
+                },
+              }),
             ],
-            controllers: [TestController]
+            controllers: [TestController],
           })
           class TestModule {}
 
           const app = await NestFactory.create(
             TestModule,
             new PlatformAdapter(),
-            { logger: false }
+            { logger: false },
           );
           const server = app.getHttpServer();
 
@@ -305,7 +307,7 @@ describe('module initialization', () => {
           await app.close();
 
           const parsedLogs = parseLogs(logs);
-          const logObject = parsedLogs.find(v => v.msg === random);
+          const logObject = parsedLogs.find((v) => v.msg === random);
           expect(logObject).toBeTruthy();
         });
 
@@ -335,7 +337,7 @@ describe('module initialization', () => {
 
           @Module({
             providers: [ConfigService],
-            exports: [ConfigService]
+            exports: [ConfigService],
           })
           class ConfigModule {}
 
@@ -345,19 +347,19 @@ describe('module initialization', () => {
                 imports: [ConfigModule],
                 inject: [ConfigService],
                 useFactory: async (config: ConfigService) => {
-                  await new Promise(r => setTimeout(r, 10));
+                  await new Promise((r) => setTimeout(r, 10));
                   return { pinoHttp: config.stream };
-                }
-              })
+                },
+              }),
             ],
-            controllers: [TestController]
+            controllers: [TestController],
           })
           class TestModule {}
 
           const app = await NestFactory.create(
             TestModule,
             new PlatformAdapter(),
-            { logger: false }
+            { logger: false },
           );
           const server = app.getHttpServer();
 
@@ -368,7 +370,7 @@ describe('module initialization', () => {
           await app.close();
 
           const parsedLogs = parseLogs(logs);
-          const logObject = parsedLogs.find(v => v.msg === random);
+          const logObject = parsedLogs.find((v) => v.msg === random);
           expect(logObject).toBeTruthy();
         });
       });

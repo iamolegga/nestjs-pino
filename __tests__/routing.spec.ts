@@ -1,13 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { Module, Controller, Get, RequestMethod } from '@nestjs/common';
-import MemoryStream = require('memorystream');
 import * as request from 'supertest';
+
+import { Controller, Get, Module, RequestMethod } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
 import { Logger, LoggerModule } from '../src';
-import { platforms } from './utils/platforms';
+import { __resetOutOfContextForTests } from '../src/services';
 import { fastifyExtraWait } from './utils/fastifyExtraWait';
 import { parseLogs } from './utils/logs';
-import { __resetOutOfContextForTests } from '../src/PinoLogger';
+import { platforms } from './utils/platforms';
 
+import MemoryStream = require('memorystream');
 describe('routing', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
@@ -55,17 +57,17 @@ describe('routing', () => {
             LoggerModule.forRoot({
               pinoHttp: stream,
               forRoutes: [LoggingController],
-              exclude: [{ method: RequestMethod.ALL, path: 'skip-log' }]
-            })
+              exclude: [{ method: RequestMethod.ALL, path: 'skip-log' }],
+            }),
           ],
-          controllers: [LoggingController, NoLoggingController]
+          controllers: [LoggingController, NoLoggingController],
         })
         class TestModule {}
 
         const app = await NestFactory.create(
           TestModule,
           new PlatformAdapter(),
-          { logger: false }
+          { logger: false },
         );
         const server = app.getHttpServer();
 
@@ -75,26 +77,28 @@ describe('routing', () => {
         await Promise.all([
           request(server).get('/'),
           request(server).get('/skip-log'),
-          request(server).get('/no-logging')
+          request(server).get('/no-logging'),
         ]);
         await app.close();
 
         const parsedLogs = parseLogs(logs);
 
         // log object of included controller should have `req` property
-        const logObject = parsedLogs.find(v => v.msg === logValue && !!v.req);
+        const logObject = parsedLogs.find((v) => v.msg === logValue && !!v.req);
         expect(logObject).toBeTruthy();
 
         // log object of included controller but excluded route should not have `req` property
-        const logObject2 = parsedLogs.find(v => v.msg === logValue2 && !v.req);
+        const logObject2 = parsedLogs.find(
+          (v) => v.msg === logValue2 && !v.req,
+        );
         expect(logObject2).toBeTruthy();
 
         // log object of not included controller should not have `req` property
-        const logObject3 = parsedLogs.find(v => v.msg === logValue3);
+        const logObject3 = parsedLogs.find((v) => v.msg === logValue3);
         expect(logObject3).toBeTruthy();
 
         // should be only 1 req/res auto log
-        const responseLogObjects = parsedLogs.filter(v => !!v.res);
+        const responseLogObjects = parsedLogs.filter((v) => !!v.res);
         expect(responseLogObjects).toHaveLength(1);
       });
     });

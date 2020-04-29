@@ -1,13 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { Module, Controller, Get, Injectable } from '@nestjs/common';
-import MemoryStream = require('memorystream');
 import * as request from 'supertest';
-import { PinoLogger, InjectPinoLogger, LoggerModule, Logger } from '../src';
-import { platforms } from './utils/platforms';
+
+import { Controller, Get, Injectable, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
+import { InjectPinoLogger, Logger, LoggerModule, PinoLogger } from '../src';
+import { __resetOutOfContextForTests } from '../src/services';
 import { fastifyExtraWait } from './utils/fastifyExtraWait';
 import { parseLogs } from './utils/logs';
-import { __resetOutOfContextForTests } from '../src/PinoLogger';
+import { platforms } from './utils/platforms';
 
+import MemoryStream = require('memorystream');
 describe('rename context property', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
@@ -39,7 +41,7 @@ describe('rename context property', () => {
           constructor(
             private readonly service: TestService,
             @InjectPinoLogger(controllerContext)
-            private readonly logger: PinoLogger
+            private readonly logger: PinoLogger,
           ) {}
           @Get()
           get() {
@@ -53,14 +55,14 @@ describe('rename context property', () => {
         @Module({
           imports: [LoggerModule.forRoot({ pinoHttp: stream, renameContext })],
           controllers: [TestController],
-          providers: [TestService]
+          providers: [TestService],
         })
         class TestModule {}
 
         const app = await NestFactory.create(
           TestModule,
           new PlatformAdapter(),
-          { logger: false }
+          { logger: false },
         );
         const server = app.getHttpServer();
 
@@ -74,26 +76,26 @@ describe('rename context property', () => {
         const parsedLogs = parseLogs(logs);
 
         const serviceLogObject = parsedLogs.find(
-          v =>
+          (v) =>
             v.msg === serviceLogMessage &&
             v.req &&
-            v[renameContext] === serviceContext
+            v[renameContext] === serviceContext,
         );
         expect(serviceLogObject).toBeTruthy();
 
         const controllerLogObject1 = parsedLogs.find(
-          v =>
+          (v) =>
             v.msg === controllerLogMessage &&
             v.req &&
             v[renameContext] === controllerContext &&
-            (v as any).foo === 'bar'
+            (v as any).foo === 'bar',
         );
         const controllerLogObject2 = parsedLogs.find(
-          v =>
+          (v) =>
             v.msg === controllerLogMessage &&
             v.req &&
             v[renameContext] === controllerContext &&
-            !('foo' in v)
+            !('foo' in v),
         );
         expect(controllerLogObject1).toBeTruthy();
         expect(controllerLogObject2).toBeTruthy();

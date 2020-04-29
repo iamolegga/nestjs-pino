@@ -1,14 +1,16 @@
-import { NestFactory } from '@nestjs/core';
-import { Module, Controller, Get, Injectable } from '@nestjs/common';
-import MemoryStream = require('memorystream');
-import * as request from 'supertest';
 import * as pino from 'pino';
+import * as request from 'supertest';
+
+import { Controller, Get, Injectable, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
 import { Logger, LoggerModule } from '../src';
-import { platforms } from './utils/platforms';
+import { __resetOutOfContextForTests } from '../src/services';
 import { fastifyExtraWait } from './utils/fastifyExtraWait';
 import { parseLogs } from './utils/logs';
-import { __resetOutOfContextForTests } from '../src/PinoLogger';
+import { platforms } from './utils/platforms';
 
+import MemoryStream = require('memorystream');
 describe('pass existing logger', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
@@ -43,17 +45,17 @@ describe('pass existing logger', () => {
 
         @Module({
           imports: [
-            LoggerModule.forRoot({ pinoHttp: { logger: pino(stream) } })
+            LoggerModule.forRoot({ pinoHttp: { logger: pino(stream) } }),
           ],
           controllers: [TestController],
-          providers: [TestService]
+          providers: [TestService],
         })
         class TestModule {}
 
         const app = await NestFactory.create(
           TestModule,
           new PlatformAdapter(),
-          { logger: false }
+          { logger: false },
         );
         app.useLogger(app.get(Logger));
         const server = app.getHttpServer();
@@ -65,11 +67,11 @@ describe('pass existing logger', () => {
 
         const parsedLogs = parseLogs(logs);
 
-        const serviceLogObject = parsedLogs.find(v => v.msg === random);
+        const serviceLogObject = parsedLogs.find((v) => v.msg === random);
         expect(serviceLogObject).toBeTruthy();
 
-        const appLogObject = parsedLogs.find(log =>
-          log.msg.startsWith('Nest application successfully started')
+        const appLogObject = parsedLogs.find((log) =>
+          log.msg.startsWith('Nest application successfully started'),
         );
         expect(appLogObject).toBeTruthy();
       });

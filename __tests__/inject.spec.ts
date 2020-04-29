@@ -1,13 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { Module, Controller, Get, Injectable } from '@nestjs/common';
-import MemoryStream = require('memorystream');
 import * as request from 'supertest';
-import { PinoLogger, InjectPinoLogger, LoggerModule } from '../src';
-import { platforms } from './utils/platforms';
+
+import { Controller, Get, Injectable, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
+import { InjectPinoLogger, LoggerModule, PinoLogger } from '../src';
+import { __resetOutOfContextForTests } from '../src/services';
 import { fastifyExtraWait } from './utils/fastifyExtraWait';
 import { parseLogs } from './utils/logs';
-import { __resetOutOfContextForTests } from '../src/PinoLogger';
+import { platforms } from './utils/platforms';
 
+import MemoryStream = require('memorystream');
 describe('InjectPinoLogger', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
@@ -27,7 +29,7 @@ describe('InjectPinoLogger', () => {
         @Injectable()
         class TestService {
           constructor(
-            @InjectPinoLogger() private readonly logger: PinoLogger
+            @InjectPinoLogger() private readonly logger: PinoLogger,
           ) {}
           someMethod() {
             this.logger.info(serviceLogMessage);
@@ -38,7 +40,7 @@ describe('InjectPinoLogger', () => {
         class TestController {
           constructor(
             private readonly service: TestService,
-            @InjectPinoLogger(context) private readonly logger: PinoLogger
+            @InjectPinoLogger(context) private readonly logger: PinoLogger,
           ) {}
           @Get()
           get() {
@@ -52,14 +54,14 @@ describe('InjectPinoLogger', () => {
         @Module({
           imports: [LoggerModule.forRoot({ pinoHttp: stream })],
           controllers: [TestController],
-          providers: [TestService]
+          providers: [TestService],
         })
         class TestModule {}
 
         const app = await NestFactory.create(
           TestModule,
           new PlatformAdapter(),
-          { logger: false }
+          { logger: false },
         );
         const server = app.getHttpServer();
 
@@ -73,23 +75,23 @@ describe('InjectPinoLogger', () => {
         const parsedLogs = parseLogs(logs);
 
         const serviceLogObject = parsedLogs.find(
-          v => v.msg === serviceLogMessage && v.req && !v.context
+          (v) => v.msg === serviceLogMessage && v.req && !v.context,
         );
         expect(serviceLogObject).toBeTruthy();
 
         const controllerLogObject1 = parsedLogs.find(
-          v =>
+          (v) =>
             v.msg === controllerLogMessage &&
             v.req &&
             v.context === context &&
-            (v as any).foo === 'bar'
+            (v as any).foo === 'bar',
         );
         const controllerLogObject2 = parsedLogs.find(
-          v =>
+          (v) =>
             v.msg === controllerLogMessage &&
             v.req &&
             v.context === context &&
-            !('foo' in v)
+            !('foo' in v),
         );
         expect(controllerLogObject1).toBeTruthy();
         expect(controllerLogObject2).toBeTruthy();

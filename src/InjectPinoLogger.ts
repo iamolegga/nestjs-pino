@@ -1,5 +1,6 @@
 import { Inject, Provider } from '@nestjs/common';
-import { PinoLogger } from './PinoLogger';
+
+import { PinoLogger } from './services';
 
 const decoratedTokenPrefix = 'PinoLogger:';
 

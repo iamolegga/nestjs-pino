@@ -1,8 +1,10 @@
-import { Injectable, Inject, Scope } from '@nestjs/common';
-import * as pino from 'pino';
 import { getValue } from 'express-ctx';
-import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from './constants';
-import { Params, isPassedLogger } from './params';
+import * as pino from 'pino';
+
+import { Inject, Injectable, Scope } from '@nestjs/common';
+
+import { LOGGER_KEY, PARAMS_PROVIDER_TOKEN } from '../constants';
+import { isPassedLogger, Params } from '../params';
 
 interface PinoMethods
   extends Pick<
