@@ -1,6 +1,7 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
+
+import { LoggerCoreModule } from './logger-core.module';
 import { LoggerModuleAsyncParams, Params } from './params';
-import { LoggerCoreModule } from './LoggerCoreModule';
 
 @Module({})
 export class LoggerModule {
