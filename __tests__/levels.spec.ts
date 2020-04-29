@@ -23,6 +23,7 @@ const pinoLoggerMethods: pino.Level[] = loggerMethods
   .map((p) => p[1])
   .concat('fatal');
 
+// tslint:disable: max-classes-per-file
 describe(`${Logger.name} levels`, () => {
   beforeEach(() => __resetOutOfContextForTests());
 

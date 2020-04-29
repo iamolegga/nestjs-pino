@@ -1,6 +1,12 @@
 import * as request from 'supertest';
 
-import { Controller, Get, Injectable, Module, OnModuleInit } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Injectable,
+  Module,
+  OnModuleInit,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 
@@ -10,6 +16,7 @@ import { fastifyExtraWait } from './utils/fastifyExtraWait';
 import { parseLogs } from './utils/logs';
 
 import MemoryStream = require('memorystream');
+// tslint:disable: max-classes-per-file
 describe('useExisting property', () => {
   beforeEach(() => __resetOutOfContextForTests());
 

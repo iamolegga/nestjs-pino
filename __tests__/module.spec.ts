@@ -10,6 +10,7 @@ import { parseLogs } from './utils/logs';
 import { platforms } from './utils/platforms';
 
 import MemoryStream = require('memorystream');
+// tslint:disable: max-classes-per-file
 describe('module initialization', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
