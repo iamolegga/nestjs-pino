@@ -1,11 +1,14 @@
-import { ModuleMetadata } from '@nestjs/common/interfaces';
+import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
 
+import { LoggerOptionsFactory } from './logger-options-factory.interface';
 import { LoggerOptions } from './logger-options.interface';
 
 export interface LoggerModuleAsyncOptions
   extends Pick<ModuleMetadata, 'imports' | 'providers'> {
   inject?: any[];
-  useFactory: (...args: any[]) => LoggerOptions | Promise<LoggerOptions>;
+  useExisting?: Type<LoggerOptionsFactory>;
+  useClass?: Type<LoggerOptionsFactory>;
+  useFactory?: (...args: any[]) => Promise<LoggerOptions> | LoggerOptions;
 }
 
 // TODO For backwards compatibility. Remove in a major release

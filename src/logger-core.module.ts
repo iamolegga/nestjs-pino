@@ -1,18 +1,12 @@
 import {
-  DynamicModule,
-  Global,
-  Inject,
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
+    DynamicModule, Global, Inject, MiddlewareConsumer, Module, NestModule, RequestMethod
 } from '@nestjs/common';
 import { Provider } from '@nestjs/common/interfaces';
 
 import { createLoggerMiddlewares } from './common';
 import { LOGGER_OPTIONS } from './constants';
-import { LoggerModuleAsyncOptions, LoggerOptions } from './interfaces';
-import { createProvidersForDecorated } from './logger.providers';
+import { LoggerModuleAsyncOptions, LoggerOptions, LoggerOptionsFactory } from './interfaces';
+import { createLoggerProviders, createProvidersForDecorated } from './logger.providers';
 import { Logger, PinoLogger } from './services';
 
 const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
@@ -20,35 +14,26 @@ const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
 @Global()
 @Module({ providers: [Logger], exports: [Logger] })
 export class LoggerCoreModule implements NestModule {
-  static forRoot(options: LoggerOptions | undefined): DynamicModule {
-    const paramsProvider: Provider<LoggerOptions> = {
-      provide: LOGGER_OPTIONS,
-      useValue: options || {},
-    };
-
-    const decorated = createProvidersForDecorated();
+  static forRoot(options: LoggerOptions = {}): DynamicModule {
+    const providers = createLoggerProviders(options);
 
     return {
       module: LoggerCoreModule,
-      providers: [Logger, ...decorated, PinoLogger, paramsProvider],
-      exports: [Logger, ...decorated, PinoLogger],
+      providers,
+      exports: providers,
     };
   }
 
   static forRootAsync(options: LoggerModuleAsyncOptions): DynamicModule {
-    const paramsProvider: Provider<LoggerOptions | Promise<LoggerOptions>> = {
-      provide: LOGGER_OPTIONS,
-      useFactory: options.useFactory,
-      inject: options.inject,
-    };
-
-    const decorated = createProvidersForDecorated();
-
-    const providers: any[] = [
+    const exportsProviders = [
       Logger,
-      ...decorated,
+      ...createProvidersForDecorated(),
       PinoLogger,
-      paramsProvider,
+    ];
+
+    const providers = [
+      ...exportsProviders,
+      ...this.createProviders(options),
       ...(options.providers || []),
     ];
 
@@ -56,7 +41,44 @@ export class LoggerCoreModule implements NestModule {
       module: LoggerCoreModule,
       imports: options.imports,
       providers,
-      exports: [Logger, ...decorated, PinoLogger],
+      exports: exportsProviders,
+    };
+  }
+
+  private static createProviders(
+    options: LoggerModuleAsyncOptions,
+  ): Provider[] {
+    if (options.useExisting || options.useFactory) {
+      return [this.createOptionsProvider(options)];
+    }
+
+    return [
+      this.createOptionsProvider(options),
+      {
+        provide: options.useClass!,
+        useClass: options.useClass!,
+      },
+    ];
+  }
+
+  private static createOptionsProvider(
+    options: LoggerModuleAsyncOptions,
+  ): Provider {
+    if (options.useFactory) {
+      return {
+        provide: LOGGER_OPTIONS,
+        useFactory: options.useFactory,
+        inject: options.inject || [],
+      };
+    }
+
+    // For useExisting...
+    return {
+      provide: LOGGER_OPTIONS,
+      useFactory: async (optionsFactory: LoggerOptionsFactory) =>
+        await optionsFactory.createLoggerOptions(),
+      // inject: [options.useExisting || options.useClass],
+      inject: [options.useExisting ? options.useExisting : options.useClass!],
     };
   }
 

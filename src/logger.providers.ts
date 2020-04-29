@@ -2,7 +2,21 @@ import { Provider } from '@nestjs/common';
 
 import { getLoggerToken } from './common';
 import { decoratedLoggers } from './common/decorated-loggers';
-import { PinoLogger } from './services';
+import { LOGGER_OPTIONS } from './constants';
+import { LoggerOptions } from './interfaces';
+import { Logger, PinoLogger } from './services';
+
+export function createLoggerProviders(options: LoggerOptions) {
+  return [
+    Logger,
+    ...createProvidersForDecorated(),
+    PinoLogger,
+    {
+      provide: LOGGER_OPTIONS,
+      useValue: options,
+    },
+  ];
+}
 
 function createDecoratedLoggerProvider(context: string): Provider<PinoLogger> {
   return {
