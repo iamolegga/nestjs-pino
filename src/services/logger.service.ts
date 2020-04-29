@@ -1,7 +1,7 @@
 import { Inject, Injectable, LoggerService } from '@nestjs/common';
 
-import { PARAMS_PROVIDER_TOKEN } from '../constants';
-import { Params } from '../params';
+import { LOGGER_OPTIONS } from '../constants';
+import { LoggerOptions } from '../interfaces';
 import { PinoLogger } from './pino-logger.service';
 
 @Injectable()
@@ -10,7 +10,7 @@ export class Logger implements LoggerService {
 
   constructor(
     private readonly logger: PinoLogger,
-    @Inject(PARAMS_PROVIDER_TOKEN) { renameContext }: Params,
+    @Inject(LOGGER_OPTIONS) { renameContext }: LoggerOptions,
   ) {
     this.contextName = renameContext || 'context';
   }

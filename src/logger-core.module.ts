@@ -3,13 +3,19 @@ import { middleware as ctxMiddleware, setValue } from 'express-ctx';
 import * as pinoHttp from 'pino-http';
 
 import {
-    DynamicModule, Global, Inject, MiddlewareConsumer, Module, NestModule, RequestMethod
+  DynamicModule,
+  Global,
+  Inject,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
 } from '@nestjs/common';
 import { Provider } from '@nestjs/common/interfaces';
 
-import { LOGGER_KEY, PARAMS_PROVIDER_TOKEN } from './constants';
+import { LOGGER_KEY, LOGGER_OPTIONS } from './constants';
 import { createProvidersForDecorated } from './InjectPinoLogger';
-import { LoggerModuleAsyncParams, Params } from './params';
+import { LoggerModuleAsyncOptions, LoggerOptions } from './interfaces';
 import { Logger, PinoLogger } from './services';
 
 const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
@@ -17,9 +23,9 @@ const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
 @Global()
 @Module({ providers: [Logger], exports: [Logger] })
 export class LoggerCoreModule implements NestModule {
-  static forRoot(params: Params | undefined): DynamicModule {
-    const paramsProvider: Provider<Params> = {
-      provide: PARAMS_PROVIDER_TOKEN,
+  static forRoot(params: LoggerOptions | undefined): DynamicModule {
+    const paramsProvider: Provider<LoggerOptions> = {
+      provide: LOGGER_OPTIONS,
       useValue: params || {},
     };
 
@@ -32,9 +38,9 @@ export class LoggerCoreModule implements NestModule {
     };
   }
 
-  static forRootAsync(params: LoggerModuleAsyncParams): DynamicModule {
-    const paramsProvider: Provider<Params | Promise<Params>> = {
-      provide: PARAMS_PROVIDER_TOKEN,
+  static forRootAsync(params: LoggerModuleAsyncOptions): DynamicModule {
+    const paramsProvider: Provider<LoggerOptions | Promise<LoggerOptions>> = {
+      provide: LOGGER_OPTIONS,
       useFactory: params.useFactory,
       inject: params.inject,
     };
@@ -57,7 +63,7 @@ export class LoggerCoreModule implements NestModule {
     };
   }
 
-  constructor(@Inject(PARAMS_PROVIDER_TOKEN) private readonly params: Params) {}
+  constructor(@Inject(LOGGER_OPTIONS) private readonly params: LoggerOptions) {}
 
   configure(consumer: MiddlewareConsumer) {
     const {
@@ -81,7 +87,7 @@ export class LoggerCoreModule implements NestModule {
 }
 
 function createLoggerMiddlewares(
-  params: NonNullable<Params['pinoHttp']>,
+  params: NonNullable<LoggerOptions['pinoHttp']>,
   useExisting?: true,
 ) {
   if (useExisting) {

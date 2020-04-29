@@ -3,8 +3,9 @@ import * as pino from 'pino';
 
 import { Inject, Injectable, Scope } from '@nestjs/common';
 
-import { LOGGER_KEY, PARAMS_PROVIDER_TOKEN } from '../constants';
-import { isPassedLogger, Params } from '../params';
+import { LOGGER_KEY, LOGGER_OPTIONS } from '../constants';
+import { LoggerOptions } from '../interfaces';
+import { isPassedLogger } from '../params';
 
 interface PinoMethods
   extends Pick<
@@ -30,7 +31,7 @@ export class PinoLogger implements PinoMethods {
   private readonly contextName: string;
 
   constructor(
-    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
+    @Inject(LOGGER_OPTIONS) { pinoHttp, renameContext }: LoggerOptions,
   ) {
     if (!outOfContext) {
       if (Array.isArray(pinoHttp)) {
