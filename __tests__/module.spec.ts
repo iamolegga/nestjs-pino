@@ -1,26 +1,26 @@
-import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get, Injectable } from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { Logger, LoggerModule } from "../src";
-import { platforms } from "./utils/platforms";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
+import { NestFactory } from '@nestjs/core';
+import { Module, Controller, Get, Injectable } from '@nestjs/common';
+import MemoryStream = require('memorystream');
+import * as request from 'supertest';
+import { Logger, LoggerModule } from '../src';
+import { platforms } from './utils/platforms';
+import { fastifyExtraWait } from './utils/fastifyExtraWait';
+import { parseLogs } from './utils/logs';
+import { __resetOutOfContextForTests } from '../src/PinoLogger';
 
-describe("module initialization", () => {
+describe('module initialization', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      describe("forRoot", () => {
-        it("should compile without params", async () => {
-          @Controller("/")
+      describe('forRoot', () => {
+        it('should compile without params', async () => {
+          @Controller('/')
           class TestController {
             constructor(private readonly logger: Logger) {}
-            @Get("/")
+            @Get('/')
             get() {
-              this.logger.log("");
+              this.logger.log('');
               return {};
             }
           }
@@ -40,18 +40,18 @@ describe("module initialization", () => {
           await fastifyExtraWait(PlatformAdapter, app);
         });
 
-        it("should work properly with single value of `httpPino` property", async () => {
+        it('should work properly with single value of `httpPino` property', async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
-          let logs = "";
-          stream.on("data", (chunk: string) => {
+          let logs = '';
+          stream.on('data', (chunk: string) => {
             logs += chunk.toString();
           });
 
-          @Controller("/")
+          @Controller('/')
           class TestController {
             constructor(private readonly logger: Logger) {}
-            @Get("/")
+            @Get('/')
             get() {
               this.logger.log(random);
               return {};
@@ -74,7 +74,7 @@ describe("module initialization", () => {
           await app.init();
           await fastifyExtraWait(PlatformAdapter, app);
 
-          await request(server).get("/");
+          await request(server).get('/');
           await app.close();
 
           const parsedLogs = parseLogs(logs);
@@ -82,18 +82,18 @@ describe("module initialization", () => {
           expect(logObject).toBeTruthy();
         });
 
-        it("should work properly with array as value of `httpPino` property", async () => {
+        it('should work properly with array as value of `httpPino` property', async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
-          let logs = "";
-          stream.on("data", (chunk: string) => {
+          let logs = '';
+          stream.on('data', (chunk: string) => {
             logs += chunk.toString();
           });
 
-          @Controller("/")
+          @Controller('/')
           class TestController {
             constructor(private readonly logger: Logger) {}
-            @Get("/")
+            @Get('/')
             get() {
               this.logger.debug(random);
               return {};
@@ -102,7 +102,7 @@ describe("module initialization", () => {
 
           @Module({
             imports: [
-              LoggerModule.forRoot({ pinoHttp: [{ level: "debug" }, stream] })
+              LoggerModule.forRoot({ pinoHttp: [{ level: 'debug' }, stream] })
             ],
             controllers: [TestController]
           })
@@ -118,7 +118,7 @@ describe("module initialization", () => {
           await app.init();
           await fastifyExtraWait(PlatformAdapter, app);
 
-          await request(server).get("/");
+          await request(server).get('/');
           await app.close();
 
           const parsedLogs = parseLogs(logs);
@@ -127,20 +127,20 @@ describe("module initialization", () => {
         });
       });
 
-      describe("forRootAsync", () => {
-        it("should work properly when useFactory returns single value of `httpPino` property", async () => {
+      describe('forRootAsync', () => {
+        it('should work properly when useFactory returns single value of `httpPino` property', async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
-          let logs = "";
+          let logs = '';
 
-          stream.on("data", (chunk: string) => {
+          stream.on('data', (chunk: string) => {
             logs += chunk.toString();
           });
 
-          @Controller("/")
+          @Controller('/')
           class TestController {
             constructor(private readonly logger: Logger) {}
-            @Get("/")
+            @Get('/')
             get() {
               this.logger.log(random);
               return {};
@@ -182,7 +182,7 @@ describe("module initialization", () => {
           await app.init();
           await fastifyExtraWait(PlatformAdapter, app);
 
-          await request(server).get("/");
+          await request(server).get('/');
           await app.close();
 
           const parsedLogs = parseLogs(logs);
@@ -190,19 +190,19 @@ describe("module initialization", () => {
           expect(logObject).toBeTruthy();
         });
 
-        it("should work properly when useFactory returns array as value of `httpPino` property", async () => {
+        it('should work properly when useFactory returns array as value of `httpPino` property', async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
-          let logs = "";
+          let logs = '';
 
-          stream.on("data", (chunk: string) => {
+          stream.on('data', (chunk: string) => {
             logs += chunk.toString();
           });
 
-          @Controller("/")
+          @Controller('/')
           class TestController {
             constructor(private readonly logger: Logger) {}
-            @Get("/")
+            @Get('/')
             get() {
               this.logger.debug(random);
               return {};
@@ -211,7 +211,7 @@ describe("module initialization", () => {
 
           @Injectable()
           class ConfigService {
-            public readonly level = "debug";
+            public readonly level = 'debug';
             public readonly stream = stream;
           }
 
@@ -245,7 +245,7 @@ describe("module initialization", () => {
           await app.init();
           await fastifyExtraWait(PlatformAdapter, app);
 
-          await request(server).get("/");
+          await request(server).get('/');
           await app.close();
 
           const parsedLogs = parseLogs(logs);
@@ -253,19 +253,19 @@ describe("module initialization", () => {
           expect(logObject).toBeTruthy();
         });
 
-        it("should work properly when pass deps via providers", async () => {
+        it('should work properly when pass deps via providers', async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
-          let logs = "";
+          let logs = '';
 
-          stream.on("data", (chunk: string) => {
+          stream.on('data', (chunk: string) => {
             logs += chunk.toString();
           });
 
-          @Controller("/")
+          @Controller('/')
           class TestController {
             constructor(private readonly logger: Logger) {}
-            @Get("/")
+            @Get('/')
             get() {
               this.logger.log(random);
               return {};
@@ -301,7 +301,7 @@ describe("module initialization", () => {
           await app.init();
           await fastifyExtraWait(PlatformAdapter, app);
 
-          await request(server).get("/");
+          await request(server).get('/');
           await app.close();
 
           const parsedLogs = parseLogs(logs);
@@ -309,19 +309,19 @@ describe("module initialization", () => {
           expect(logObject).toBeTruthy();
         });
 
-        it("should work properly when useFactory returns Promise", async () => {
+        it('should work properly when useFactory returns Promise', async () => {
           const stream = new MemoryStream();
           const random = Math.random().toString();
-          let logs = "";
+          let logs = '';
 
-          stream.on("data", (chunk: string) => {
+          stream.on('data', (chunk: string) => {
             logs += chunk.toString();
           });
 
-          @Controller("/")
+          @Controller('/')
           class TestController {
             constructor(private readonly logger: Logger) {}
-            @Get("/")
+            @Get('/')
             get() {
               this.logger.log(random);
               return {};
@@ -364,7 +364,7 @@ describe("module initialization", () => {
           await app.init();
           await fastifyExtraWait(PlatformAdapter, app);
 
-          await request(server).get("/");
+          await request(server).get('/');
           await app.close();
 
           const parsedLogs = parseLogs(logs);

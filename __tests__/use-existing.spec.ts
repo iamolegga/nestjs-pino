@@ -1,30 +1,30 @@
-import { NestFactory } from "@nestjs/core";
+import { NestFactory } from '@nestjs/core';
 import {
   Module,
   Controller,
   Get,
   Injectable,
   OnModuleInit
-} from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { Logger, LoggerModule } from "../src";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
-import { FastifyAdapter } from "@nestjs/platform-fastify";
+} from '@nestjs/common';
+import MemoryStream = require('memorystream');
+import * as request from 'supertest';
+import { Logger, LoggerModule } from '../src';
+import { fastifyExtraWait } from './utils/fastifyExtraWait';
+import { parseLogs } from './utils/logs';
+import { __resetOutOfContextForTests } from '../src/PinoLogger';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 
-describe("useExisting property", () => {
+describe('useExisting property', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
   describe(FastifyAdapter.name, () => {
-    it("should use adapter logger in req context and default beyond", async () => {
+    it('should use adapter logger in req context and default beyond', async () => {
       const stream = new MemoryStream();
       const random = Math.random().toString();
-      const moduleInitMessage = "module initiated";
-      let logs = "";
+      const moduleInitMessage = 'module initiated';
+      let logs = '';
 
-      stream.on("data", (chunk: string) => {
+      stream.on('data', (chunk: string) => {
         logs += chunk.toString();
       });
 
@@ -39,10 +39,10 @@ describe("useExisting property", () => {
         }
       }
 
-      @Controller("/")
+      @Controller('/')
       class TestController {
         constructor(private readonly service: TestService) {}
-        @Get("/")
+        @Get('/')
         get() {
           this.service.someMethod();
           return {};
@@ -65,7 +65,7 @@ describe("useExisting property", () => {
 
       await app.init();
       await fastifyExtraWait(FastifyAdapter, app);
-      await request(server).get("/");
+      await request(server).get('/');
       await app.close();
 
       const parsedLogs = parseLogs(logs);

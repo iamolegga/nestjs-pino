@@ -9,7 +9,7 @@ export type LogObject = {
 
 export function parseLogs(logs: string): LogObject[] {
   return logs
-    .split("\n")
+    .split('\n')
     .map(v => v.trim())
     .filter(v => !!v)
     .map(v => JSON.parse(v));

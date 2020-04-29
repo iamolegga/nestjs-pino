@@ -1,7 +1,7 @@
-import { Injectable, LoggerService, Inject } from "@nestjs/common";
-import { PinoLogger } from "./PinoLogger";
-import { PARAMS_PROVIDER_TOKEN } from "./constants";
-import { Params } from "./params";
+import { Injectable, LoggerService, Inject } from '@nestjs/common';
+import { PinoLogger } from './PinoLogger';
+import { PARAMS_PROVIDER_TOKEN } from './constants';
+import { Params } from './params';
 
 @Injectable()
 export class Logger implements LoggerService {
@@ -9,9 +9,9 @@ export class Logger implements LoggerService {
 
   constructor(
     private readonly logger: PinoLogger,
-    @Inject(PARAMS_PROVIDER_TOKEN) { renameContext }: Params
+    @Inject(PARAMS_PROVIDER_TOKEN) { renameContext }: Params,
   ) {
-    this.contextName = renameContext || "context";
+    this.contextName = renameContext || 'context';
   }
 
   verbose(message: any, context?: string, ...args: any[]) {
@@ -51,7 +51,7 @@ export class Logger implements LoggerService {
       this.logger.error(
         { [this.contextName]: context, trace },
         message,
-        ...args
+        ...args,
       );
     } else if (trace) {
       this.logger.error({ trace }, message, ...args);

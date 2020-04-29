@@ -1,6 +1,6 @@
-import { Controller, Get } from "@nestjs/common";
-import { MyService } from "./my.service";
-import { PinoLogger } from "../src";
+import { Controller, Get } from '@nestjs/common';
+import { MyService } from './my.service';
+import { PinoLogger } from '../src';
 
 @Controller()
 export class AppController {
@@ -13,7 +13,7 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    this.logger.info("getHello(%O)", arguments);
+    this.logger.info('getHello(%O)', arguments);
     return `Hello ${this.myService.getWorld()}`;
   }
 }

@@ -1,46 +1,46 @@
-import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get, RequestMethod } from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { Logger, LoggerModule } from "../src";
-import { platforms } from "./utils/platforms";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
+import { NestFactory } from '@nestjs/core';
+import { Module, Controller, Get, RequestMethod } from '@nestjs/common';
+import MemoryStream = require('memorystream');
+import * as request from 'supertest';
+import { Logger, LoggerModule } from '../src';
+import { platforms } from './utils/platforms';
+import { fastifyExtraWait } from './utils/fastifyExtraWait';
+import { parseLogs } from './utils/logs';
+import { __resetOutOfContextForTests } from '../src/PinoLogger';
 
-describe("routing", () => {
+describe('routing', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      it("routing should work properly", async () => {
+      it('routing should work properly', async () => {
         const logValue = Math.random().toString();
         const logValue2 = Math.random().toString();
         const logValue3 = Math.random().toString();
 
-        let logs = "";
+        let logs = '';
         const stream = new MemoryStream();
-        stream.on("data", (chunk: string) => {
+        stream.on('data', (chunk: string) => {
           logs += chunk.toString();
         });
 
-        @Controller("/")
+        @Controller('/')
         class LoggingController {
           constructor(private readonly logger: Logger) {}
-          @Get("/")
+          @Get('/')
           withLog() {
             this.logger.log(logValue);
             return {};
           }
 
-          @Get("/skip-log")
+          @Get('/skip-log')
           skipLog() {
             this.logger.log(logValue2);
             return {};
           }
         }
 
-        @Controller("/no-logging")
+        @Controller('/no-logging')
         class NoLoggingController {
           constructor(private readonly logger: Logger) {}
           @Get()
@@ -55,7 +55,7 @@ describe("routing", () => {
             LoggerModule.forRoot({
               pinoHttp: stream,
               forRoutes: [LoggingController],
-              exclude: [{ method: RequestMethod.ALL, path: "skip-log" }]
+              exclude: [{ method: RequestMethod.ALL, path: 'skip-log' }]
             })
           ],
           controllers: [LoggingController, NoLoggingController]
@@ -73,9 +73,9 @@ describe("routing", () => {
         await fastifyExtraWait(PlatformAdapter, app);
 
         await Promise.all([
-          request(server).get("/"),
-          request(server).get("/skip-log"),
-          request(server).get("/no-logging")
+          request(server).get('/'),
+          request(server).get('/skip-log'),
+          request(server).get('/no-logging')
         ]);
         await app.close();
 

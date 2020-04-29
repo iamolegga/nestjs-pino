@@ -1,13 +1,13 @@
-import { Injectable, Inject, Scope } from "@nestjs/common";
-import * as pino from "pino";
-import { getValue } from "express-ctx";
-import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from "./constants";
-import { Params, isPassedLogger } from "./params";
+import { Injectable, Inject, Scope } from '@nestjs/common';
+import * as pino from 'pino';
+import { getValue } from 'express-ctx';
+import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from './constants';
+import { Params, isPassedLogger } from './params';
 
 interface PinoMethods
   extends Pick<
     pino.BaseLogger,
-    "trace" | "debug" | "info" | "warn" | "error" | "fatal"
+    'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
   > {}
 
 type LoggerFn =
@@ -24,11 +24,11 @@ export function __resetOutOfContextForTests() {
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class PinoLogger implements PinoMethods {
-  private context = "";
+  private context = '';
   private readonly contextName: string;
 
   constructor(
-    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params
+    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
   ) {
     if (!outOfContext) {
       if (Array.isArray(pinoHttp)) {
@@ -40,43 +40,43 @@ export class PinoLogger implements PinoMethods {
       }
     }
 
-    this.contextName = renameContext || "context";
+    this.contextName = renameContext || 'context';
   }
 
   trace(msg: string, ...args: any[]): void;
   trace(obj: object, msg?: string, ...args: any[]): void;
   trace(...args: Parameters<LoggerFn>) {
-    this.call("trace", ...args);
+    this.call('trace', ...args);
   }
 
   debug(msg: string, ...args: any[]): void;
   debug(obj: object, msg?: string, ...args: any[]): void;
   debug(...args: Parameters<LoggerFn>) {
-    this.call("debug", ...args);
+    this.call('debug', ...args);
   }
 
   info(msg: string, ...args: any[]): void;
   info(obj: object, msg?: string, ...args: any[]): void;
   info(...args: Parameters<LoggerFn>) {
-    this.call("info", ...args);
+    this.call('info', ...args);
   }
 
   warn(msg: string, ...args: any[]): void;
   warn(obj: object, msg?: string, ...args: any[]): void;
   warn(...args: Parameters<LoggerFn>) {
-    this.call("warn", ...args);
+    this.call('warn', ...args);
   }
 
   error(msg: string, ...args: any[]): void;
   error(obj: object, msg?: string, ...args: any[]): void;
   error(...args: Parameters<LoggerFn>) {
-    this.call("error", ...args);
+    this.call('error', ...args);
   }
 
   fatal(msg: string, ...args: any[]): void;
   fatal(obj: object, msg?: string, ...args: any[]): void;
   fatal(...args: Parameters<LoggerFn>) {
-    this.call("fatal", ...args);
+    this.call('fatal', ...args);
   }
 
   setContext(value: string) {
@@ -87,10 +87,10 @@ export class PinoLogger implements PinoMethods {
     const context = this.context;
     if (context) {
       const firstArg = args[0];
-      if (typeof firstArg === "object") {
+      if (typeof firstArg === 'object') {
         args = [
           Object.assign({ [this.contextName]: context }, firstArg),
-          ...args.slice(1)
+          ...args.slice(1),
         ];
       } else {
         args = [{ [this.contextName]: context }, ...args];

@@ -1,26 +1,26 @@
-import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get, Injectable } from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { PinoLogger, InjectPinoLogger, LoggerModule } from "../src";
-import { platforms } from "./utils/platforms";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
+import { NestFactory } from '@nestjs/core';
+import { Module, Controller, Get, Injectable } from '@nestjs/common';
+import MemoryStream = require('memorystream');
+import * as request from 'supertest';
+import { PinoLogger, InjectPinoLogger, LoggerModule } from '../src';
+import { platforms } from './utils/platforms';
+import { fastifyExtraWait } from './utils/fastifyExtraWait';
+import { parseLogs } from './utils/logs';
+import { __resetOutOfContextForTests } from '../src/PinoLogger';
 
-describe("InjectPinoLogger", () => {
+describe('InjectPinoLogger', () => {
   beforeEach(() => __resetOutOfContextForTests());
 
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      it("should work", async () => {
+      it('should work', async () => {
         const stream = new MemoryStream();
         const serviceLogMessage = Math.random().toString();
         const controllerLogMessage = Math.random().toString();
         const context = Math.random().toString();
-        let logs = "";
+        let logs = '';
 
-        stream.on("data", (chunk: string) => {
+        stream.on('data', (chunk: string) => {
           logs += chunk.toString();
         });
 
@@ -34,7 +34,7 @@ describe("InjectPinoLogger", () => {
           }
         }
 
-        @Controller("/")
+        @Controller('/')
         class TestController {
           constructor(
             private readonly service: TestService,
@@ -42,7 +42,7 @@ describe("InjectPinoLogger", () => {
           ) {}
           @Get()
           get() {
-            this.logger.info({ foo: "bar" }, controllerLogMessage);
+            this.logger.info({ foo: 'bar' }, controllerLogMessage);
             this.logger.info(controllerLogMessage);
             this.service.someMethod();
             return {};
@@ -66,7 +66,7 @@ describe("InjectPinoLogger", () => {
         await app.init();
         await fastifyExtraWait(PlatformAdapter, app);
 
-        await request(server).get("/");
+        await request(server).get('/');
 
         await app.close();
 
@@ -82,14 +82,14 @@ describe("InjectPinoLogger", () => {
             v.msg === controllerLogMessage &&
             v.req &&
             v.context === context &&
-            (v as any).foo === "bar"
+            (v as any).foo === 'bar'
         );
         const controllerLogObject2 = parsedLogs.find(
           v =>
             v.msg === controllerLogMessage &&
             v.req &&
             v.context === context &&
-            !("foo" in v)
+            !('foo' in v)
         );
         expect(controllerLogObject1).toBeTruthy();
         expect(controllerLogObject2).toBeTruthy();
