@@ -8,15 +8,10 @@
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "baseUrl": "./",
     "incremental": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "noLib": false,
-    "noImplicitAny": false,
-    "skipLibCheck": true
+    "strict": true
   },
-  "include": ["src", "example", "__tests__"],
-  "exclude": ["node_modules"]
+  "include": ["src", "example", "__tests__"]
 }

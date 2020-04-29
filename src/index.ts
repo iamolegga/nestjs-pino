@@ -1,10 +1,10 @@
 export { LoggerModule } from './logger.module';
 export {
   LoggerModuleAsyncOptions,
-  //   LoggerModuleAsyncParams,
+  LoggerModuleAsyncParams,
   LoggerOptions,
-  LoggerOptionsFactory, //   Params,
+  LoggerOptionsFactory,
+  Params,
 } from './interfaces';
 export { Logger, PinoLogger } from './services';
-// export { InjectPinoLogger, getLoggerToken } from './common';
-export { InjectPinoLogger, getLoggerToken } from './InjectPinoLogger';
+export { InjectPinoLogger, getLoggerToken } from './common';

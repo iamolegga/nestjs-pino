@@ -3,9 +3,9 @@ import * as pino from 'pino';
 
 import { Inject, Injectable, Scope } from '@nestjs/common';
 
+import { isPassedLogger } from '../common';
 import { LOGGER_KEY, LOGGER_OPTIONS } from '../constants';
 import { LoggerOptions } from '../interfaces';
-import { isPassedLogger } from '../params';
 
 interface PinoMethods
   extends Pick<

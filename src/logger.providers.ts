@@ -1,15 +1,8 @@
-import { Inject, Provider } from '@nestjs/common';
+import { Provider } from '@nestjs/common';
 
+import { getLoggerToken } from './common';
+import { decoratedLoggers } from './common/decorated-loggers';
 import { PinoLogger } from './services';
-
-const decoratedTokenPrefix = 'PinoLogger:';
-
-const decoratedLoggers = new Set<string>();
-
-export function InjectPinoLogger(context = '') {
-  decoratedLoggers.add(context);
-  return Inject(getLoggerToken(context));
-}
 
 function createDecoratedLoggerProvider(context: string): Provider<PinoLogger> {
   return {
@@ -26,8 +19,4 @@ export function createProvidersForDecorated(): Provider<PinoLogger>[] {
   return [...decoratedLoggers.values()].map((context) =>
     createDecoratedLoggerProvider(context),
   );
-}
-
-export function getLoggerToken(context: string): string {
-  return `${decoratedTokenPrefix}${context}`;
 }
