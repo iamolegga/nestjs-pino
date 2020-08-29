@@ -14,47 +14,74 @@ export class Logger implements LoggerService {
     this.contextName = renameContext || "context";
   }
 
-  verbose(message: any, context?: string, ...args: any[]) {
+  verbose(message: any, context?: string, isTimestampEnabled?: boolean, ...args: any[]) {
     if (context) {
-      this.logger.trace({ [this.contextName]: context }, message, ...args);
+      if (typeof message === 'object') {
+        this.logger.trace({[this.contextName]: context, ...message}, ...args);
+      } else {
+        this.logger.trace({[this.contextName]: context}, message, ...args);
+      }
     } else {
       this.logger.trace(message, ...args);
     }
   }
 
-  debug(message: any, context?: string, ...args: any[]) {
+  debug(message: any, context?: string, isTimestampEnabled?: boolean, ...args: any[]) {
     if (context) {
-      this.logger.debug({ [this.contextName]: context }, message, ...args);
+      if (typeof message === 'object') {
+        this.logger.debug({[this.contextName]: context, ...message}, ...args);
+      } else {
+        this.logger.debug({[this.contextName]: context}, message, ...args);
+      }
     } else {
       this.logger.debug(message, ...args);
     }
   }
 
-  log(message: any, context?: string, ...args: any[]) {
+  log(message: any, context?: string, isTimestampEnabled?: boolean, ...args: any[]) {
     if (context) {
-      this.logger.info({ [this.contextName]: context }, message, ...args);
+      if (typeof message === 'object') {
+        this.logger.info({[this.contextName]: context, ...message}, ...args);
+      } else {
+        this.logger.info({[this.contextName]: context}, message, ...args);
+      }
     } else {
       this.logger.info(message, ...args);
     }
   }
 
-  warn(message: any, context?: string, ...args: any[]) {
+  warn(message: any, context?: string, isTimestampEnabled?: boolean, ...args: any[]) {
     if (context) {
-      this.logger.warn({ [this.contextName]: context }, message, ...args);
+      if (typeof message === 'object') {
+        this.logger.warn({[this.contextName]: context, ...message}, ...args);
+      } else {
+        this.logger.warn({[this.contextName]: context}, message, ...args);
+      }
     } else {
       this.logger.warn(message, ...args);
     }
   }
 
-  error(message: any, trace?: string, context?: string, ...args: any[]) {
+  error(message: any, trace?: string, context?: string, isTimestampEnabled?: boolean, ...args: any[]) {
     if (context) {
-      this.logger.error(
-        { [this.contextName]: context, trace },
-        message,
-        ...args
-      );
+      if (typeof message === 'object') {
+        this.logger.error(
+          { [this.contextName]: context, trace, ...message },
+          ...args
+        );
+      } else {
+        this.logger.error(
+          { [this.contextName]: context, trace },
+          message,
+          ...args
+        );
+      }
     } else if (trace) {
-      this.logger.error({ trace }, message, ...args);
+      if (typeof message === 'object') {
+        this.logger.error({trace, ...message}, ...args);
+      } else {
+        this.logger.error({trace}, message, ...args);
+      }
     } else {
       this.logger.error(message, ...args);
     }

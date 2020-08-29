@@ -39,6 +39,8 @@ import { LoggerModule } from "nestjs-pino";
 class MyModule {}
 ```
 
+### Logger
+
 In controller let's use `Logger` - class with the same API as [built-in NestJS logger](https://docs.nestjs.com/techniques/logger):
 
 ```ts
@@ -63,6 +65,8 @@ export class AppController {
   }
 }
 ```
+
+### PinoLogger
 
 Let's compare it to another one logger - `PinoLogger`, it has same _logging_ API as `pino` instance.
 
@@ -118,12 +122,24 @@ export class MyService {
 }
 ```
 
-And also `Logger` can be set as app logger, as it is compatible with [built-in NestJS logger](https://docs.nestjs.com/techniques/logger):
+### Using as NestJS app logger
+
+`Logger` can be set as app logger, as it is compatible with [built-in NestJS logger](https://docs.nestjs.com/techniques/logger).
+According to [official docs](https://docs.nestjs.com/techniques/logger#dependency-injection), loggers with Dependency injection should be set via following construction:
 
 ```ts
 import { Logger } from "nestjs-pino";
 
-const app = await NestFactory.create(AppModule, { logger: false });
+const app = await NestFactory.create(
+  AppModule,
+  // You can disable the default logger here until PinoLogger is initialized.
+  // But be mindful that logs emitted before you call app.useLogger
+  // will not be outputted anywhere.
+  // If you don't mind some of your initial logs to be in a non-json format,
+  // it is better to simply leave default logger as is, and just
+  // override it on the next line with app.useLogger
+  { logger: false }
+);
 app.useLogger(app.get(Logger));
 ```
 
@@ -143,6 +159,27 @@ Output:
 // Automatic logs of every request/response
 {"level":30,"time":1570470161819,"pid":17383,"hostname":"my-host","req":{"id":1,"method":"GET","url":"/","headers":{...},"remoteAddress":"::1","remotePort":53957},"res":{"statusCode":304,"headers":{...}},"responseTime":15,"msg":"request completed","v":1}
 ```
+
+If you set up `nestjs-pino` as an app logger, you can instantiate it in your services via `Logger` singleton from `@nestjs/common`.
+See more info about this way in [this Stack Overflow answer](https://stackoverflow.com/a/52907695/4601673).
+
+```ts
+import { Logger } from "@nestjs/common";
+
+@Injectable()
+export class MyService {
+  logger = new Logger(MyService.name);
+
+  getWorld(...params: any[]) {
+    this.logger.log('You can log string message');
+    this.logger.log({
+      msg: 'Or an object',
+      with: 'additional keys'
+    });
+    return "World!";
+  }
+}
+``` 
 
 ## Comparison with others
 
@@ -423,17 +460,6 @@ Using this token, you can easily provide a mock implementation of the logger usi
       },
     ],
   }).compile();
-```
-
-## Usage as NestJS app logger
-
-According to [official docs](https://docs.nestjs.com/techniques/logger#dependency-injection), loggers with Dependency injection should be set via following construction:
-
-```ts
-import { Logger } from "nestjs-pino";
-
-const app = await NestFactory.create(MyModule, { logger: false });
-app.useLogger(app.get(Logger));
 ```
 
 ## Migrating
