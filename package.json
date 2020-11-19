@@ -2,13 +2,12 @@
   "name": "nestjs-pino",
   "version": "1.3.0",
   "description": "Pino logger for NestJS",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "jest --verbose",
-    "build": "rm -rf ./dist && tsc --outDir --p tsconfig.build.json",
+    "build": "rm -rf ./dist && tsc --p tsconfig.build.json",
     "report": "cat ./coverage/lcov.info | coveralls",
-    "example": "rm -rf ./dist && tsc && LOG_LEVEL=debug node dist/example/main",
-    "postinstall": "npm run build"
+    "example": "rm -rf ./dist && tsc && LOG_LEVEL=debug node dist/example/main"
   },
   "engineStrict": false,
   "engines": {
@@ -36,7 +35,6 @@
     "@types/pino-http": "^5.0.0",
     "@types/pino-multi-stream": "^5.1.0",
     "express-ctx": "^0.1.1",
-    "pino": "^6.7.0",
     "pino-http": "^5.0.0",
     "pino-multi-stream": "^5.1.1"
   },

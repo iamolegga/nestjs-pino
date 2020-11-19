@@ -2,7 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { Module, Controller, Get, Injectable } from "@nestjs/common";
 import MemoryStream = require("memorystream");
 import * as request from "supertest";
-import { Logger, PinoLogger, LoggerModule } from "../src";
+import { Logger, LoggerModule } from "../src";
 import { platforms } from "./utils/platforms";
 import { fastifyExtraWait } from "./utils/fastifyExtraWait";
 import { parseLogs } from "./utils/logs";
