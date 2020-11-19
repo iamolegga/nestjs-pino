@@ -8,15 +8,40 @@ import {
 
 export type PassedLogger = { logger: pino.Logger };
 
+/** Base configuration options for every SDK. */
+export interface SentryOptions {
+  /**
+   * Enable debug functionality in the SDK itself
+   */
+  debug?: boolean;
+
+  /**
+   * Specifies whether this SDK should activate and send events to Sentry.
+   * Disabling the SDK reduces all overhead from instrumentation, collecting
+   * breadcrumbs and capturing events. Defaults to true.
+   */
+  enabled?: boolean;
+
+  /**
+   * The Dsn used to connect to Sentry and identify the project. If omitted, the
+   * SDK will not send any data to Sentry.
+   */
+  dsn?: string;
+  environment?: string;
+}
+
 export interface Params {
   pinoHttp?:
     | pinoHttp.Options
     | DestinationStream
     | [pinoHttp.Options, DestinationStream];
+  name?: string;
+  level?: string;
   exclude?: Parameters<MiddlewareConfigProxy["exclude"]>;
   forRoutes?: Parameters<MiddlewareConfigProxy["forRoutes"]>;
   useExisting?: true;
   renameContext?: string;
+  sentry?: SentryOptions;
 }
 
 export interface LoggerModuleAsyncParams

@@ -7,7 +7,8 @@
     "test": "jest --verbose",
     "build": "rm -rf ./dist && tsc --p tsconfig.build.json",
     "report": "cat ./coverage/lcov.info | coveralls",
-    "example": "rm -rf ./dist && tsc && LOG_LEVEL=debug node dist/example/main"
+    "example": "rm -rf ./dist && tsc && LOG_LEVEL=debug node dist/example/main",
+    "postinstall": "npm run build"
   },
   "engineStrict": false,
   "engines": {
@@ -31,9 +32,13 @@
   },
   "homepage": "https://github.com/iamolegga/nestjs-pino#readme",
   "dependencies": {
+    "@sentry/node": "^5.27.4",
     "@types/pino-http": "^5.0.0",
+    "@types/pino-multi-stream": "^5.1.0",
     "express-ctx": "^0.1.1",
-    "pino-http": "^5.0.0"
+    "pino": "^6.7.0",
+    "pino-http": "^5.0.0",
+    "pino-multi-stream": "^5.1.1"
   },
   "devDependencies": {
     "@nestjs/common": "^6.6.7",

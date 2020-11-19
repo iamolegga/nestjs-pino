@@ -10,7 +10,11 @@ import {
 import { Provider } from "@nestjs/common/interfaces";
 import * as express from "express";
 import * as pinoHttp from "pino-http";
+import { multistream } from 'pino-multi-stream';
+
 import { setValue, middleware as ctxMiddleware } from "express-ctx";
+import * as Sentry from '@sentry/node';
+
 import { Logger } from "./Logger";
 import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from "./constants";
 import { Params, LoggerModuleAsyncParams } from "./params";
@@ -69,8 +73,11 @@ export class LoggerCoreModule implements NestModule {
       exclude,
       forRoutes = DEFAULT_ROUTES,
       pinoHttp,
-      useExisting
+      useExisting,
+      sentry: sentryConfig,
     } = this.params;
+
+    Sentry.init(sentryConfig || {});
 
     const middlewares = createLoggerMiddlewares(pinoHttp || {}, useExisting);
 
@@ -97,9 +104,26 @@ function createLoggerMiddlewares(
     return [ctxMiddleware, pinoHttp(...params), bindLoggerMiddleware];
   }
 
+  const client = {
+    level: 'warn',
+    stream: {
+      write: (record: any) => {
+        const data = JSON.parse(record);
+        Sentry.captureEvent({
+          // @ts-ignore
+          level: 'error',
+          timestamp: data.time,
+          message: data.msg,
+          extra: data,
+        });
+      },
+    },
+  };
+
   // FIXME: params type here is pinoHttp.Options | pino.DestinationStream
   // pinoHttp has two overloads, each of them takes those types
-  return [ctxMiddleware, pinoHttp(params as any), bindLoggerMiddleware];
+  // @ts-ignore
+  return [ctxMiddleware, pinoHttp(params as any, multistream([client])), bindLoggerMiddleware];
 }
 
 function bindLoggerMiddleware(
