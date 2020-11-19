@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest --verbose",
-    "build": "rm -rf ./dist && tsc --p tsconfig.build.json",
+    "build": "rm -rf ./dist && tsc --outDir --p tsconfig.build.json",
     "report": "cat ./coverage/lcov.info | coveralls",
     "example": "rm -rf ./dist && tsc && LOG_LEVEL=debug node dist/example/main",
     "postinstall": "npm run build"
