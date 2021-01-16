@@ -249,6 +249,7 @@ import { LoggerModule } from 'nestjs-pino';
         {
           name: 'add some name to every JSON line',
           level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+          // install 'pino-pretty' package in order to use the following option
           prettyPrint: process.env.NODE_ENV !== 'production',
           useLevelLabels: true,
           // and all the others...
