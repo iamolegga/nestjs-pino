@@ -8,7 +8,7 @@ export class Logger implements LoggerService {
   private readonly contextName: string;
 
   constructor(
-    private readonly logger: PinoLogger,
+    protected readonly logger: PinoLogger,
     @Inject(PARAMS_PROVIDER_TOKEN) { renameContext }: Params
   ) {
     this.contextName = renameContext || "context";

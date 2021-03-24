@@ -33,7 +33,7 @@ export class LoggerCoreModule implements NestModule {
     return {
       module: LoggerCoreModule,
       providers: [Logger, ...decorated, PinoLogger, paramsProvider],
-      exports: [Logger, ...decorated, PinoLogger]
+      exports: [Logger, ...decorated, PinoLogger, paramsProvider]
     };
   }
 
@@ -58,7 +58,7 @@ export class LoggerCoreModule implements NestModule {
       module: LoggerCoreModule,
       imports: params.imports,
       providers,
-      exports: [Logger, ...decorated, PinoLogger]
+      exports: [Logger, ...decorated, PinoLogger, paramsProvider]
     };
   }
 
