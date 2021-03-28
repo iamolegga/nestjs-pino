@@ -107,7 +107,7 @@ export class PinoLogger implements PinoMethods {
     (this.logger[method] as any)(...args);
   }
 
-  private get logger() {
+  public get logger() {
     return getValue<pino.Logger>(LOGGER_KEY) || outOfContext;
   }
 }
