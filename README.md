@@ -436,6 +436,52 @@ import { Logger } from "nestjs-pino";
 const app = await NestFactory.create(MyModule, { logger: false });
 app.useLogger(app.get(Logger));
 ```
+## Extend the Logger class
+
+You can extend the Logger class to add your own business logic.
+
+```ts
+// logger.service.ts
+import { Logger, PinoLogger, Params, PARAMS_PROVIDER_TOKEN } from "nestjs-pino";
+
+@Injectable()
+class LoggerService extends Logger() {
+  // regular injecting
+  constructor(
+    logger: PinoLogger,
+    @Inject(PARAMS_PROVIDER_TOKEN) params: Params
+  ) {
+    ...
+  }
+
+  // extended method
+  myMethod(): any {}
+}
+
+import { PinoLogger, Params, PARAMS_PROVIDER_TOKEN } from "nestjs-pino";
+
+@Injectable()
+class LoggerService extends PinoLogger() {
+  // regular injecting
+  constructor(
+    @Inject(PARAMS_PROVIDER_TOKEN) params: Params
+  ) {
+    ...
+  }
+
+  // extended method
+  myMethod(): any {}
+}
+
+
+// logger.module.ts
+@Module({
+  providers: [LoggerService],
+  exports: [LoggerService],
+  imports: [LoggerModule.forRoot()],
+})
+class LoggerModule {}
+```
 
 ## Migrating
 
