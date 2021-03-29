@@ -1,8 +1,8 @@
 import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get, Injectable } from "@nestjs/common";
+import { Module, Controller, Get, Injectable, Inject } from "@nestjs/common";
 import MemoryStream = require("memorystream");
 import * as request from "supertest";
-import { Logger, LoggerModule } from "../src";
+import { Logger, PinoLogger, LoggerModule, Params, PARAMS_PROVIDER_TOKEN } from "../src";
 import { platforms } from "./utils/platforms";
 import { fastifyExtraWait } from "./utils/fastifyExtraWait";
 import { parseLogs } from "./utils/logs";
@@ -125,6 +125,125 @@ describe("module initialization", () => {
           const logObject = parsedLogs.find(v => v.msg === random);
           expect(logObject).toBeTruthy();
         });
+
+        it("should work properly with an extended logger service", async() => {
+          const stream = new MemoryStream();
+          const random = Math.random().toString();
+          let logs = "";
+          stream.on("data", (chunk: string) => {
+            logs += chunk.toString();
+          });
+
+          @Injectable()
+          class LoggerService extends Logger {
+            private readonly message: String; 
+            constructor(
+              logger: PinoLogger,
+              @Inject(PARAMS_PROVIDER_TOKEN) params: Params,
+            ) {
+              super(logger, params);
+              this.message = random;
+            }
+            
+            log() {
+              this.logger.info(this.message)
+            }
+          }
+
+          @Controller("/")
+          class TestController {
+            constructor(private readonly logger: LoggerService) {}
+            @Get("/")
+            get() {
+              this.logger.log();
+              return {};
+            }
+          }
+
+          @Module({
+            providers: [LoggerService],
+            exports: [LoggerService],
+            imports: [LoggerModule.forRoot({pinoHttp: stream})],
+            controllers: [TestController]
+          })
+          class TestModule {}
+
+          const app = await NestFactory.create(
+            TestModule,
+            new PlatformAdapter(),
+            { logger: false }
+          );
+          const server = app.getHttpServer();
+
+          await app.init();
+          await fastifyExtraWait(PlatformAdapter, app);
+
+          await request(server).get("/");
+          await app.close();
+
+          const parsedLogs = parseLogs(logs);
+          const logObject = parsedLogs.find(v => v.msg === random);
+          expect(logObject).toBeTruthy();
+        })
+
+        it("should work properly with an extended PinoLogger service", async() => {
+          const stream = new MemoryStream();
+          const random = Math.random().toString();
+          let logs = "";
+          stream.on("data", (chunk: string) => {
+            logs += chunk.toString();
+          });
+
+          @Injectable()
+          class LoggerService extends PinoLogger {
+            private readonly message: String; 
+            constructor(
+              @Inject(PARAMS_PROVIDER_TOKEN) params: Params,
+            ) {
+              super(params);
+              this.message = random;
+            }
+            
+            log() {
+              this.info(this.message)
+            }
+          }
+
+          @Controller("/")
+          class TestController {
+            constructor(private readonly logger: LoggerService) {}
+            @Get("/")
+            get() {
+              this.logger.log();
+              return {};
+            }
+          }
+
+          @Module({
+            providers: [LoggerService],
+            exports: [LoggerService],
+            imports: [LoggerModule.forRoot({pinoHttp: stream})],
+            controllers: [TestController]
+          })
+          class TestModule {}
+
+          const app = await NestFactory.create(
+            TestModule,
+            new PlatformAdapter(),
+            { logger: false }
+          );
+          const server = app.getHttpServer();
+
+          await app.init();
+          await fastifyExtraWait(PlatformAdapter, app);
+
+          await request(server).get("/");
+          await app.close();
+
+          const parsedLogs = parseLogs(logs);
+          const logObject = parsedLogs.find(v => v.msg === random);
+          expect(logObject).toBeTruthy();
+        })
       });
 
       describe("forRootAsync", () => {
@@ -371,6 +490,129 @@ describe("module initialization", () => {
           const logObject = parsedLogs.find(v => v.msg === random);
           expect(logObject).toBeTruthy();
         });
+
+        it("should work properly with an extended logger service", async() => {
+          const stream = new MemoryStream();
+          const random = Math.random().toString();
+          let logs = "";
+          stream.on("data", (chunk: string) => {
+            logs += chunk.toString();
+          });
+
+          @Injectable()
+          class LoggerService extends Logger {
+            private readonly message: String; 
+            constructor(
+              logger: PinoLogger,
+              @Inject(PARAMS_PROVIDER_TOKEN) params: Params,
+            ) {
+              super(logger, params);
+              this.message = random;
+            }
+            
+            log() {
+              this.logger.info(this.message)
+            }
+          }
+
+          @Controller("/")
+          class TestController {
+            constructor(private readonly logger: LoggerService) {}
+            @Get("/")
+            get() {
+              this.logger.log();
+              return {};
+            }
+          }
+
+          @Module({
+            providers: [LoggerService],
+            exports: [LoggerService],
+            imports: [LoggerModule.forRootAsync({
+              useFactory: async() => ({pinoHttp: stream})
+            })],
+            controllers: [TestController]
+          })
+          class TestModule {}
+
+          const app = await NestFactory.create(
+            TestModule,
+            new PlatformAdapter(),
+            { logger: false }
+          );
+          const server = app.getHttpServer();
+
+          await app.init();
+          await fastifyExtraWait(PlatformAdapter, app);
+
+          await request(server).get("/");
+          await app.close();
+
+          const parsedLogs = parseLogs(logs);
+          const logObject = parsedLogs.find(v => v.msg === random);
+          expect(logObject).toBeTruthy();
+        })
+
+        it("should work properly with an extended PinoLogger service", async() => {
+          const stream = new MemoryStream();
+          const random = Math.random().toString();
+          let logs = "";
+          stream.on("data", (chunk: string) => {
+            logs += chunk.toString();
+          });
+
+          @Injectable()
+          class LoggerService extends PinoLogger {
+            private readonly message: String; 
+            constructor(
+              @Inject(PARAMS_PROVIDER_TOKEN) params: Params,
+            ) {
+              super(params);
+              this.message = random;
+            }
+            
+            log() {
+              this.info(this.message)
+            }
+          }
+
+          @Controller("/")
+          class TestController {
+            constructor(private readonly logger: LoggerService) {}
+            @Get("/")
+            get() {
+              this.logger.log();
+              return {};
+            }
+          }
+
+          @Module({
+            providers: [LoggerService],
+            exports: [LoggerService],
+            imports: [LoggerModule.forRootAsync({
+              useFactory: async() => ({pinoHttp: stream})
+            })],
+            controllers: [TestController]
+          })
+          class TestModule {}
+
+          const app = await NestFactory.create(
+            TestModule,
+            new PlatformAdapter(),
+            { logger: false }
+          );
+          const server = app.getHttpServer();
+
+          await app.init();
+          await fastifyExtraWait(PlatformAdapter, app);
+
+          await request(server).get("/");
+          await app.close();
+
+          const parsedLogs = parseLogs(logs);
+          const logObject = parsedLogs.find(v => v.msg === random);
+          expect(logObject).toBeTruthy();
+        })
       });
     });
   }
