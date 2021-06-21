@@ -44,7 +44,7 @@
     "@types/express": "^4.17.1",
     "@types/jest": "^26.0.0",
     "@types/memorystream": "^0.3.0",
-    "@types/node": "^14.0.1",
+    "@types/node": "^15.12.4",
     "@types/supertest": "^2.0.8",
     "coveralls": "^3.0.6",
     "express": "^4.17.1",
