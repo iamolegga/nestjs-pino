@@ -156,7 +156,6 @@ There are other Nestjs loggers. The key purposes of this module are:
 
 | Logger             | Nest App logger | Logger service | Autobind request data to logs |
 | ------------------ | :-------------: | :------------: | :---------------------------: |
-| nest-morgan        |        -        |       -        |               -               |
 | nest-winston       |        +        |       +        |               -               |
 | nestjs-pino-logger |        +        |       +        |               -               |
 | **nestjs-pino**    |        +        |       +        |               +               |
