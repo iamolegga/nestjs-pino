@@ -435,6 +435,15 @@ import { Logger } from "nestjs-pino";
 const app = await NestFactory.create(MyModule, { logger: false });
 app.useLogger(app.get(Logger));
 ```
+
+NestJS 8 introduced logs buffering feature, which allows to keep first initialization messages:
+
+```ts
+import { Logger } from "nestjs-pino";
+
+const app = await NestFactory.create(MyModule, { bufferLogs: true });
+app.useLogger(app.get(Logger));
+```
 ## Extend the Logger class
 
 You can extend the Logger class to add your own business logic.
