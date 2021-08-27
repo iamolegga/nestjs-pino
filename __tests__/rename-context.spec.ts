@@ -1,102 +1,99 @@
-import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get, Injectable } from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { PinoLogger, InjectPinoLogger, LoggerModule, Logger } from "../src";
-import { platforms } from "./utils/platforms";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
+import { Controller, Get, Logger } from '@nestjs/common';
+import { PinoLogger, InjectPinoLogger } from '../src';
+import { platforms } from './utils/platforms';
+import { TestCase } from './utils/test-case';
 
-describe("rename context property", () => {
-  beforeEach(() => __resetOutOfContextForTests());
-
+describe('rename context property name', () => {
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      it("should work", async () => {
-        const stream = new MemoryStream();
-        const serviceLogMessage = Math.random().toString();
-        const controllerLogMessage = Math.random().toString();
-        const serviceContext = Math.random().toString();
-        const controllerContext = Math.random().toString();
-        const renameContext = "ctx";
-        let logs = "";
+      it(InjectPinoLogger.name, async () => {
+        const ctxFiledName = 'ctx';
+        const msg = Math.random().toString();
 
-        stream.on("data", (chunk: string) => {
-          logs += chunk.toString();
-        });
-
-        @Injectable()
-        class TestService {
-          constructor(private readonly logger: Logger) {}
-          someMethod() {
-            this.logger.log(serviceLogMessage, serviceContext);
-          }
-        }
-
-        @Controller("/")
+        @Controller('/')
         class TestController {
           constructor(
-            private readonly service: TestService,
-            @InjectPinoLogger(controllerContext)
-            private readonly logger: PinoLogger
+            @InjectPinoLogger(TestController.name)
+            private readonly logger: PinoLogger,
           ) {}
           @Get()
           get() {
-            this.logger.info({ foo: "bar" }, controllerLogMessage);
-            this.logger.info(controllerLogMessage);
-            this.service.someMethod();
+            this.logger.info(msg);
             return {};
           }
         }
 
-        @Module({
-          imports: [LoggerModule.forRoot({ pinoHttp: stream, renameContext })],
+        const logs = await new TestCase(new PlatformAdapter(), {
           controllers: [TestController],
-          providers: [TestService]
         })
-        class TestModule {}
+          .forRoot({ renameContext: ctxFiledName })
+          .run();
+        expect(
+          logs.some(
+            (v) =>
+              v.req && v[ctxFiledName] === TestController.name && v.msg === msg,
+          ),
+        ).toBeTruthy();
+        expect(logs.getStartLog()).toHaveProperty(ctxFiledName);
+      });
 
-        const app = await NestFactory.create(
-          TestModule,
-          new PlatformAdapter(),
-          { logger: false }
-        );
-        const server = app.getHttpServer();
+      it(PinoLogger.name, async () => {
+        const ctxFiledName = 'ctx';
+        const msg = Math.random().toString();
 
-        await app.init();
-        await fastifyExtraWait(PlatformAdapter, app);
+        @Controller('/')
+        class TestController {
+          constructor(private readonly logger: PinoLogger) {
+            this.logger.setContext(TestController.name);
+          }
 
-        await request(server).get("/");
+          @Get()
+          get() {
+            this.logger.info(msg);
+            return {};
+          }
+        }
 
-        await app.close();
+        const logs = await new TestCase(new PlatformAdapter(), {
+          controllers: [TestController],
+        })
+          .forRoot({ renameContext: ctxFiledName })
+          .run();
+        expect(
+          logs.some(
+            (v) =>
+              v.req && v[ctxFiledName] === TestController.name && v.msg === msg,
+          ),
+        ).toBeTruthy();
+        expect(logs.getStartLog()).toHaveProperty(ctxFiledName);
+      });
 
-        const parsedLogs = parseLogs(logs);
+      it(Logger.name, async () => {
+        const ctxFiledName = 'ctx';
+        const msg = Math.random().toString();
 
-        const serviceLogObject = parsedLogs.find(
-          v =>
-            v.msg === serviceLogMessage &&
-            v.req &&
-            v[renameContext] === serviceContext
-        );
-        expect(serviceLogObject).toBeTruthy();
+        @Controller('/')
+        class TestController {
+          private readonly logger = new Logger(TestController.name);
+          @Get()
+          get() {
+            this.logger.log(msg);
+            return {};
+          }
+        }
 
-        const controllerLogObject1 = parsedLogs.find(
-          v =>
-            v.msg === controllerLogMessage &&
-            v.req &&
-            v[renameContext] === controllerContext &&
-            (v as any).foo === "bar"
-        );
-        const controllerLogObject2 = parsedLogs.find(
-          v =>
-            v.msg === controllerLogMessage &&
-            v.req &&
-            v[renameContext] === controllerContext &&
-            !("foo" in v)
-        );
-        expect(controllerLogObject1).toBeTruthy();
-        expect(controllerLogObject2).toBeTruthy();
+        const logs = await new TestCase(new PlatformAdapter(), {
+          controllers: [TestController],
+        })
+          .forRoot({ renameContext: ctxFiledName })
+          .run();
+        expect(
+          logs.some(
+            (v) =>
+              v.req && v[ctxFiledName] === TestController.name && v.msg === msg,
+          ),
+        ).toBeTruthy();
+        expect(logs.getStartLog()).toHaveProperty(ctxFiledName);
       });
     });
   }

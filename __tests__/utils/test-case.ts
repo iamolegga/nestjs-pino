@@ -1,0 +1,123 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { AbstractHttpAdapter, NestFactory } from '@nestjs/core';
+import { Module, ModuleMetadata, Type } from '@nestjs/common';
+import MemoryStream = require('memorystream');
+import * as request from 'supertest';
+import * as pinoHttp from 'pino-http';
+import * as pino from 'pino';
+import {
+  Logger,
+  LoggerModule,
+  LoggerModuleAsyncParams,
+  Params,
+} from '../../src';
+import { __resetOutOfContextForTests } from '../../src/PinoLogger';
+import { LogsContainer } from './logs';
+
+export class TestCase {
+  private module?: Type<any>;
+  private stream: pino.DestinationStream;
+
+  constructor(
+    private readonly adapter: AbstractHttpAdapter<any, any, any>,
+    private readonly moduleMetadata: ModuleMetadata,
+  ) {
+    // @ts-ignore bad typings
+    this.stream = new MemoryStream('', { readable: false });
+  }
+
+  forRoot(params?: Params | undefined, skipStreamInjection = false): this {
+    let finalParams: Params | undefined = params;
+
+    if (!skipStreamInjection) {
+      finalParams = this.injectStream(params);
+    }
+
+    @Module({
+      ...this.moduleMetadata,
+      imports: [
+        LoggerModule.forRoot(finalParams),
+        ...(this.moduleMetadata.imports || []),
+      ],
+    })
+    class TestModule {}
+    this.module = TestModule;
+
+    return this;
+  }
+
+  forRootAsync(
+    asyncParams: LoggerModuleAsyncParams,
+    skipStreamInjection = false,
+  ): this {
+    if (!skipStreamInjection) {
+      const useFactoryOld = asyncParams.useFactory;
+      asyncParams.useFactory = (...args: any[]) => {
+        const params = useFactoryOld(...args);
+        if ('then' in params) {
+          return params.then((p) => this.injectStream(p));
+        }
+        return this.injectStream(params);
+      };
+    }
+
+    @Module({
+      ...this.moduleMetadata,
+      imports: [
+        ...(this.moduleMetadata.imports || []),
+        LoggerModule.forRootAsync(asyncParams),
+      ],
+    })
+    class TestModule {}
+    this.module = TestModule;
+
+    return this;
+  }
+
+  async run(path = '/'): Promise<LogsContainer> {
+    expect(this.module).toBeTruthy();
+
+    __resetOutOfContextForTests();
+
+    const app = await NestFactory.create(this.module, this.adapter, {
+      bufferLogs: true,
+    });
+    app.useLogger(app.get(Logger));
+
+    const server = await app.listen(3000);
+    await request(server).get(path).expect(200);
+    await app.close();
+
+    return LogsContainer.from(this.stream);
+  }
+
+  private injectStream(params: Params | undefined): Params {
+    switch (true) {
+      case !params:
+        return { pinoHttp: this.stream };
+      case !!params!.useExisting:
+        return params!;
+      case Array.isArray(params!.pinoHttp):
+        return {
+          ...params,
+          pinoHttp: [
+            (params!.pinoHttp as [pinoHttp.Options, pino.DestinationStream])[0],
+            this.stream,
+          ],
+        };
+      case !!params!.pinoHttp:
+        return {
+          ...params,
+          pinoHttp: {
+            ...(params!.pinoHttp as pinoHttp.Options),
+            stream: this.stream,
+          },
+        };
+      default:
+        return {
+          ...params,
+          pinoHttp: this.stream,
+        };
+    }
+  }
+}

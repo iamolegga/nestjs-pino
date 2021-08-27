@@ -1,136 +1,55 @@
-import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get, Injectable } from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import * as pino from "pino";
-import { Logger, LoggerModule } from "../src";
-import { platforms } from "./utils/platforms";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests, PinoLogger } from "../src/PinoLogger";
+import { Controller, Get, Logger } from '@nestjs/common';
+import * as pino from 'pino';
+import { PinoLogger } from '../src';
+import { platforms } from './utils/platforms';
+import { TestCase } from './utils/test-case';
 
-const loggerMethods: [keyof Logger, pino.Level][] = [
-  ["verbose", "trace"],
-  ["debug", "debug"],
-  ["log", "info"],
-  ["warn", "warn"],
-  ["error", "error"]
+const loggerMethods: [Exclude<keyof Logger, 'localInstance'>, pino.Level][] = [
+  ['verbose', 'trace'],
+  ['debug', 'debug'],
+  ['log', 'info'],
+  ['warn', 'warn'],
+  ['error', 'error'],
 ];
 
 const pinoLoggerMethods: pino.Level[] = loggerMethods
-  .map(p => p[1])
-  .concat("fatal");
+  .map((p) => p[1])
+  .concat('fatal');
 
-describe(`${Logger.name} levels`, () => {
-  beforeEach(() => __resetOutOfContextForTests());
-
+describe(`Logger levels`, () => {
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
       for (const [loggerMethodName, pinoLevel] of loggerMethods) {
         it(loggerMethodName, async () => {
-          const stream = new MemoryStream();
-          const serviceLogMessage = Math.random().toString();
-          const appLogMessage = "Nest application successfully started";
-          let logs = "";
-          const trace = "trace";
+          const controllerMsg = Math.random().toString();
 
-          stream.on("data", (chunk: string) => {
-            logs += chunk.toString();
-          });
-
-          @Injectable()
-          class TestService {
-            constructor(private readonly logger: Logger) {}
-            someMethod() {
-              if (loggerMethodName === "error") {
-                this.logger[loggerMethodName](
-                  serviceLogMessage,
-                  trace,
-                  TestService.name
-                );
-                this.logger[loggerMethodName](serviceLogMessage, trace);
-              } else {
-                this.logger[loggerMethodName](
-                  serviceLogMessage,
-                  TestService.name
-                );
-              }
-              this.logger[loggerMethodName](serviceLogMessage);
-            }
-          }
-
-          @Controller("/")
+          @Controller('/')
           class TestController {
-            constructor(private readonly service: TestService) {}
+            private readonly logger = new Logger(TestController.name);
             @Get()
             get() {
-              this.service.someMethod();
+              this.logger[loggerMethodName](controllerMsg);
               return {};
             }
           }
 
-          @Module({
-            imports: [
-              LoggerModule.forRoot({ pinoHttp: [{ level: pinoLevel }, stream] })
-            ],
+          const logs = await new TestCase(new PlatformAdapter(), {
             controllers: [TestController],
-            providers: [TestService]
           })
-          class TestModule {}
+            .forRoot({ pinoHttp: { level: pinoLevel } })
+            .run();
 
-          const app = await NestFactory.create(
-            TestModule,
-            new PlatformAdapter(),
-            { logger: false }
-          );
-          app.useLogger(app.get(Logger));
-          const server = app.getHttpServer();
-
-          await app.init();
-          await fastifyExtraWait(PlatformAdapter, app);
-
-          await request(server).get("/");
-
-          await app.close();
-
-          const parsedLogs = parseLogs(logs);
-
-          const serviceLogObject = parsedLogs.find(
-            v => v.msg === serviceLogMessage && v.req && !v.context && !v.trace
-          );
-          expect(serviceLogObject).toBeTruthy();
-
-          if (pinoLevel === "error") {
-            const serviceLogObjectWithTrace = parsedLogs.find(
-              v => v.msg === serviceLogMessage && v.req && !v.context && v.trace
-            );
-            expect(serviceLogObjectWithTrace).toBeTruthy();
-            const serviceLogObjectWithTraceAndCtx = parsedLogs.find(
-              v => v.msg === serviceLogMessage && v.req && v.context && v.trace
-            );
-            expect(serviceLogObjectWithTraceAndCtx).toBeTruthy();
+          expect(logs.some((v) => v.msg === controllerMsg)).toBeTruthy();
+          if (
+            pinoLevel === 'warn' ||
+            pinoLevel === 'error' ||
+            pinoLevel === 'fatal'
+          ) {
+            expect(logs.getStartLog()).toBeFalsy();
+            expect(logs.getResponseLog()).toBeFalsy();
           } else {
-            const serviceLogObjectWithContext = parsedLogs.find(
-              v => v.msg === serviceLogMessage && v.req && v.context && !v.trace
-            );
-            expect(serviceLogObjectWithContext).toBeTruthy();
-          }
-
-          const responseLogObject = parsedLogs.find(
-            log => log.msg === "request completed"
-          );
-
-          // Because of nest itself logs and response logs has level "info"
-          // they are not always exists
-          const appLogObject = parsedLogs.find(log =>
-            log.msg.startsWith(appLogMessage)
-          );
-          if (pinoLevel === "warn" || pinoLevel === "error") {
-            expect(appLogObject).toBeFalsy();
-            expect(responseLogObject).toBeFalsy();
-          } else {
-            expect(appLogObject).toBeTruthy();
-            expect(responseLogObject).toBeTruthy();
+            expect(logs.getStartLog()).toBeTruthy();
+            expect(logs.getResponseLog()).toBeTruthy();
           }
         });
       }
@@ -138,85 +57,41 @@ describe(`${Logger.name} levels`, () => {
   }
 });
 
-describe(`${PinoLogger.name} levels`, () => {
-  beforeEach(() => __resetOutOfContextForTests());
-
+describe(`PinoLogger levels`, () => {
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
       // add fatal method
       for (const pinoLevel of pinoLoggerMethods) {
         it(pinoLevel, async () => {
-          const stream = new MemoryStream();
-          const serviceLogMessage = Math.random().toString();
-          let logs = "";
-          const trace = "trace";
+          const controllerMsg = Math.random().toString();
 
-          stream.on("data", (chunk: string) => {
-            logs += chunk.toString();
-          });
-
-          @Injectable()
-          class TestService {
-            constructor(private readonly logger: PinoLogger) {}
-            someMethod() {
-              this.logger[pinoLevel](serviceLogMessage);
-            }
-          }
-
-          @Controller("/")
+          @Controller('/')
           class TestController {
-            constructor(private readonly service: TestService) {}
+            constructor(private readonly logger: PinoLogger) {}
             @Get()
             get() {
-              this.service.someMethod();
+              this.logger[pinoLevel](controllerMsg);
               return {};
             }
           }
 
-          @Module({
-            imports: [
-              LoggerModule.forRoot({ pinoHttp: [{ level: pinoLevel }, stream] })
-            ],
+          const logs = await new TestCase(new PlatformAdapter(), {
             controllers: [TestController],
-            providers: [TestService]
           })
-          class TestModule {}
+            .forRoot({ pinoHttp: { level: pinoLevel } })
+            .run();
 
-          const app = await NestFactory.create(
-            TestModule,
-            new PlatformAdapter(),
-            { logger: false }
-          );
-          const server = app.getHttpServer();
-
-          await app.init();
-          await fastifyExtraWait(PlatformAdapter, app);
-
-          await request(server).get("/");
-
-          await app.close();
-
-          const parsedLogs = parseLogs(logs);
-
-          const serviceLogObject = parsedLogs.find(
-            v => v.msg === serviceLogMessage
-          );
-          expect(serviceLogObject).toBeTruthy();
-
-          const responseLogObject = parsedLogs.find(
-            log => log.msg === "request completed"
-          );
-
-          // Because of response logs has level "info"
-          // they are not always exists
+          expect(logs.some((v) => v.msg === controllerMsg)).toBeTruthy();
           if (
-            pinoLevel === "warn" ||
-            pinoLevel === "error" ||
-            pinoLevel === "fatal"
+            pinoLevel === 'warn' ||
+            pinoLevel === 'error' ||
+            pinoLevel === 'fatal'
           ) {
-            expect(responseLogObject).toBeFalsy();
+            expect(logs.getStartLog()).toBeFalsy();
+            expect(logs.getResponseLog()).toBeFalsy();
           } else {
-            expect(responseLogObject).toBeTruthy();
+            expect(logs.getStartLog()).toBeTruthy();
+            expect(logs.getResponseLog()).toBeTruthy();
           }
         });
       }
