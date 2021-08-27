@@ -1,101 +1,74 @@
-import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get, RequestMethod } from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { Logger, LoggerModule } from "../src";
-import { platforms } from "./utils/platforms";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
+import { Controller, Get, Logger, RequestMethod } from '@nestjs/common';
+import { platforms } from './utils/platforms';
+import { TestCase } from './utils/test-case';
 
-describe("routing", () => {
-  beforeEach(() => __resetOutOfContextForTests());
-
+describe('routing', () => {
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      it("routing should work properly", async () => {
-        const logValue = Math.random().toString();
-        const logValue2 = Math.random().toString();
-        const logValue3 = Math.random().toString();
+      let includedMsg: string;
+      let excludedMsg: string;
+      let notIncludedMsg: string;
+      let testCase: TestCase;
 
-        let logs = "";
-        const stream = new MemoryStream();
-        stream.on("data", (chunk: string) => {
-          logs += chunk.toString();
-        });
+      beforeEach(async () => {
+        includedMsg = Math.random().toString();
+        excludedMsg = Math.random().toString();
+        notIncludedMsg = Math.random().toString();
 
-        @Controller("/")
+        @Controller('/')
         class LoggingController {
-          constructor(private readonly logger: Logger) {}
-          @Get("/")
+          private readonly logger = new Logger(LoggingController.name);
+
+          @Get('/include')
           withLog() {
-            this.logger.log(logValue);
+            this.logger.log(includedMsg);
             return {};
           }
 
-          @Get("/skip-log")
+          @Get('/exclude')
           skipLog() {
-            this.logger.log(logValue2);
+            this.logger.log(excludedMsg);
             return {};
           }
         }
 
-        @Controller("/no-logging")
+        @Controller('/not-include')
         class NoLoggingController {
-          constructor(private readonly logger: Logger) {}
+          private readonly logger = new Logger(NoLoggingController.name);
+
           @Get()
           get() {
-            this.logger.log(logValue3);
+            this.logger.log(notIncludedMsg);
             return {};
           }
         }
 
-        @Module({
-          imports: [
-            LoggerModule.forRoot({
-              pinoHttp: stream,
-              forRoutes: [LoggingController],
-              exclude: [{ method: RequestMethod.ALL, path: "skip-log" }]
-            })
-          ],
-          controllers: [LoggingController, NoLoggingController]
-        })
-        class TestModule {}
+        testCase = new TestCase(new PlatformAdapter(), {
+          controllers: [LoggingController, NoLoggingController],
+        }).forRoot({
+          forRoutes: [LoggingController],
+          exclude: [{ method: RequestMethod.GET, path: '/exclude' }],
+        });
+      });
 
-        const app = await NestFactory.create(
-          TestModule,
-          new PlatformAdapter(),
-          { logger: false }
-        );
-        const server = app.getHttpServer();
+      it('included', async () => {
+        const logs = await testCase.run('/include');
+        expect(logs.some((v) => v.msg === includedMsg && !!v.req)).toBeTruthy();
+        expect(logs.getResponseLog()).toBeTruthy();
+      });
 
-        await app.init();
-        await fastifyExtraWait(PlatformAdapter, app);
+      it('excluded', async () => {
+        const logs = await testCase.run('/exclude');
+        expect(logs.some((v) => v.msg === excludedMsg && !v.req)).toBeTruthy();
+        expect(logs.getResponseLog()).toBeFalsy();
+      });
 
-        await Promise.all([
-          request(server).get("/"),
-          request(server).get("/skip-log"),
-          request(server).get("/no-logging")
-        ]);
-        await app.close();
-
-        const parsedLogs = parseLogs(logs);
-
-        // log object of included controller should have `req` property
-        const logObject = parsedLogs.find(v => v.msg === logValue && !!v.req);
-        expect(logObject).toBeTruthy();
-
-        // log object of included controller but excluded route should not have `req` property
-        const logObject2 = parsedLogs.find(v => v.msg === logValue2 && !v.req);
-        expect(logObject2).toBeTruthy();
-
-        // log object of not included controller should not have `req` property
-        const logObject3 = parsedLogs.find(v => v.msg === logValue3);
-        expect(logObject3).toBeTruthy();
-
-        // should be only 1 req/res auto log
-        const responseLogObjects = parsedLogs.filter(v => !!v.res);
-        expect(responseLogObjects).toHaveLength(1);
+      it('not included', async () => {
+        const logs = await testCase.run('/not-include');
+        expect(
+          logs.some((v) => v.msg === notIncludedMsg && !v.req),
+        ).toBeTruthy();
+        expect(logs.getResponseLog()).toBeFalsy();
       });
     });
   }

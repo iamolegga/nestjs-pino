@@ -1,82 +1,100 @@
-import { Injectable, Inject, Scope } from "@nestjs/common";
-import * as pino from "pino";
-import { getValue } from "express-ctx";
-import { PARAMS_PROVIDER_TOKEN, LOGGER_KEY } from "./constants";
-import { Params, isPassedLogger } from "./params";
+/* eslint-disable @typescript-eslint/ban-types */
+import { Injectable, Inject, Scope } from '@nestjs/common';
+import * as pino from 'pino';
+import { Params, isPassedLogger, PARAMS_PROVIDER_TOKEN } from './params';
+import { storage } from './storage';
 
-interface PinoMethods
-  extends Pick<
-    pino.BaseLogger,
-    "trace" | "debug" | "info" | "warn" | "error" | "fatal"
-  > {}
+type PinoMethods = Pick<
+  pino.BaseLogger,
+  'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+>;
 
+/**
+ * This is copy of pino.LogFn but with possibilty to make method override.
+ * Current usage works:
+ *
+ *  trace(msg: string, ...args: any[]): void;
+ *  trace(obj: object, msg?: string, ...args: any[]): void;
+ *  trace(...args: Parameters<LoggerFn>) {
+ *    this.call('trace', ...args);
+ *  }
+ *
+ * But if change local LoggerFn to pino.LogFn – this will say that overrides
+ * are incompatible
+ */
 type LoggerFn =
   | ((msg: string, ...args: any[]) => void)
   | ((obj: object, msg?: string, ...args: any[]) => void);
 
-let outOfContext: pino.Logger;
+let outOfContext: pino.Logger | undefined;
 
 export function __resetOutOfContextForTests() {
-  // only for tests
-  // @ts-ignore
   outOfContext = undefined;
 }
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class PinoLogger implements PinoMethods {
-  private context = "";
+  private context = '';
   private readonly contextName: string;
+  private readonly opts: any;
 
   constructor(
-    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params
+    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
   ) {
     if (!outOfContext) {
       if (Array.isArray(pinoHttp)) {
         outOfContext = pino(...pinoHttp);
       } else if (isPassedLogger(pinoHttp)) {
         outOfContext = pinoHttp.logger;
+      } else if (
+        typeof pinoHttp === 'object' &&
+        'stream' in pinoHttp &&
+        typeof pinoHttp.stream !== 'undefined'
+      ) {
+        outOfContext = pino(pinoHttp, pinoHttp.stream);
       } else {
         outOfContext = pino(pinoHttp);
       }
     }
 
-    this.contextName = renameContext || "context";
+    this.contextName = renameContext || 'context';
+    this.opts = pinoHttp;
   }
 
   trace(msg: string, ...args: any[]): void;
   trace(obj: object, msg?: string, ...args: any[]): void;
   trace(...args: Parameters<LoggerFn>) {
-    this.call("trace", ...args);
+    this.call('trace', ...args);
   }
 
   debug(msg: string, ...args: any[]): void;
   debug(obj: object, msg?: string, ...args: any[]): void;
   debug(...args: Parameters<LoggerFn>) {
-    this.call("debug", ...args);
+    this.call('debug', ...args);
   }
 
   info(msg: string, ...args: any[]): void;
   info(obj: object, msg?: string, ...args: any[]): void;
   info(...args: Parameters<LoggerFn>) {
-    this.call("info", ...args);
+    this.call('info', ...args);
   }
 
   warn(msg: string, ...args: any[]): void;
   warn(obj: object, msg?: string, ...args: any[]): void;
   warn(...args: Parameters<LoggerFn>) {
-    this.call("warn", ...args);
+    this.call('warn', ...args);
   }
 
   error(msg: string, ...args: any[]): void;
   error(obj: object, msg?: string, ...args: any[]): void;
   error(...args: Parameters<LoggerFn>) {
-    this.call("error", ...args);
+    this.call('error', ...args);
   }
 
   fatal(msg: string, ...args: any[]): void;
   fatal(obj: object, msg?: string, ...args: any[]): void;
   fatal(...args: Parameters<LoggerFn>) {
-    this.call("fatal", ...args);
+    this.call('fatal', ...args);
   }
 
   setContext(value: string) {
@@ -84,30 +102,40 @@ export class PinoLogger implements PinoMethods {
   }
 
   private call(method: pino.Level, ...args: Parameters<LoggerFn>) {
-    const context = this.context;
-    if (context) {
-      const firstArg = args[0];
-      if (typeof firstArg === "object") {
+    if (this.context) {
+      if (isFirstArgObject(args)) {
+        const firstArg = args[0];
         if (firstArg instanceof Error) {
           args = [
-            Object.assign({ [this.contextName]: context }, { err: firstArg }),
-            ...args.slice(1)
+            Object.assign(
+              { [this.contextName]: this.context },
+              { err: firstArg },
+            ),
+            ...args.slice(1),
           ];
         } else {
           args = [
-            Object.assign({ [this.contextName]: context }, firstArg),
-            ...args.slice(1)
+            Object.assign({ [this.contextName]: this.context }, firstArg),
+            ...args.slice(1),
           ];
         }
       } else {
-        args = [{ [this.contextName]: context }, ...args];
+        args = [{ [this.contextName]: this.context }, ...args];
       }
     }
-
-    (this.logger[method] as any)(...args);
+    // @ts-ignore args are union of tuple types
+    this.logger[method](...args);
   }
 
-  public get logger() {
-    return getValue<pino.Logger>(LOGGER_KEY) || outOfContext;
+  public get logger(): pino.Logger {
+    // outOfContext is always set in runtime before starts using
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return storage.getStore() || outOfContext!;
   }
+}
+
+function isFirstArgObject(
+  args: Parameters<LoggerFn>,
+): args is [obj: object, msg?: string, ...args: any[]] {
+  return typeof args[0] === 'object';
 }

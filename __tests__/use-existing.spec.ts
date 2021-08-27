@@ -1,82 +1,102 @@
-import { NestFactory } from "@nestjs/core";
 import {
-  Module,
   Controller,
   Get,
   Injectable,
-  OnModuleInit
-} from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { Logger, LoggerModule } from "../src";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
-import { FastifyAdapter } from "@nestjs/platform-fastify";
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
+import MemoryStream = require('memorystream');
+import * as pino from 'pino';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { TestCase } from './utils/test-case';
+import { LogsContainer } from './utils/logs';
+import { platforms } from './utils/platforms';
 
-describe("useExisting property", () => {
-  beforeEach(() => __resetOutOfContextForTests());
-
+describe('useExisting property', () => {
   describe(FastifyAdapter.name, () => {
-    it("should use adapter logger in req context and default beyond", async () => {
-      const stream = new MemoryStream();
-      const random = Math.random().toString();
-      const moduleInitMessage = "module initiated";
-      let logs = "";
-
-      stream.on("data", (chunk: string) => {
-        logs += chunk.toString();
-      });
+    it('should use adapter logger in req context and default beyond', async () => {
+      // @ts-ignore bad types
+      const stream = new MemoryStream('', { readable: false });
+      const inReqContextMsg = Math.random().toString();
+      const outReqContextMsg = Math.random().toString();
 
       @Injectable()
       class TestService implements OnModuleInit {
-        constructor(private readonly logger: Logger) {}
+        private readonly logger = new Logger(TestService.name);
+
         someMethod() {
-          this.logger.log(random);
+          this.logger.log(inReqContextMsg);
         }
         onModuleInit() {
-          this.logger.log(random);
+          this.logger.log(outReqContextMsg);
         }
       }
 
-      @Controller("/")
+      @Controller('/')
       class TestController {
         constructor(private readonly service: TestService) {}
-        @Get("/")
+        @Get('/')
         get() {
           this.service.someMethod();
           return {};
         }
       }
 
-      @Module({
-        imports: [LoggerModule.forRoot({ useExisting: true })],
+      await new TestCase(new FastifyAdapter({ logger: pino(stream) }), {
         controllers: [TestController],
-        providers: [TestService]
+        providers: [TestService],
       })
-      class TestModule {}
+        .forRoot({ useExisting: true })
+        .run();
 
-      const app = await NestFactory.create(
-        TestModule,
-        new FastifyAdapter({ logger: stream }),
-        { logger: false }
-      );
-      const server = app.getHttpServer();
+      // In this case we are checking custom stream, that was passed to pino
+      // via FastifyAdapter.
+      const logs = LogsContainer.from(stream);
 
-      await app.init();
-      await fastifyExtraWait(FastifyAdapter, app);
-      await request(server).get("/");
-      await app.close();
-
-      const parsedLogs = parseLogs(logs);
-
-      const serviceLogObject = parsedLogs.find(v => v.msg === random);
-      expect(serviceLogObject).toBeTruthy();
-
-      const moduleInitLogObject = parsedLogs.find(
-        v => v.msg === moduleInitMessage
-      );
-      expect(moduleInitLogObject).toBeFalsy();
+      // existing stream is used for logs in request context
+      expect(logs.some((v) => v.msg === inReqContextMsg)).toBeTruthy();
+      // out of context log will be sent to stdout because of standard config
+      expect(logs.some((v) => v.msg === outReqContextMsg)).toBeFalsy();
     });
   });
+});
+
+describe('pass existing pino instance', () => {
+  for (const PlatformAdapter of platforms) {
+    describe(PlatformAdapter.name, () => {
+      it('should use passed instance out of context', async () => {
+        // @ts-ignore bad types
+        const stream = new MemoryStream('', { readable: false });
+        const msg = Math.random().toString();
+
+        @Injectable()
+        class TestService implements OnModuleInit {
+          private readonly logger = new Logger(TestService.name);
+          onModuleInit() {
+            this.logger.log(msg);
+          }
+        }
+
+        @Controller('/')
+        class TestController {
+          @Get('/')
+          get() {
+            return {};
+          }
+        }
+
+        const instance = pino(stream);
+
+        await new TestCase(new PlatformAdapter(), {
+          controllers: [TestController],
+          providers: [TestService],
+        })
+          .forRoot({ pinoHttp: { logger: instance } }, true)
+          .run();
+
+        const logs = LogsContainer.from(stream);
+        expect(logs.some((v) => v.msg === msg)).toBeTruthy();
+      });
+    });
+  }
 });

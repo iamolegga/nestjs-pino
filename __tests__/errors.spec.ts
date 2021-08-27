@@ -1,68 +1,176 @@
-import { NestFactory } from "@nestjs/core";
-import { Module, Controller, Get } from "@nestjs/common";
-import MemoryStream = require("memorystream");
-import * as request from "supertest";
-import { PinoLogger, InjectPinoLogger, LoggerModule } from "../src";
-import { platforms } from "./utils/platforms";
-import { fastifyExtraWait } from "./utils/fastifyExtraWait";
-import { parseLogs } from "./utils/logs";
-import { __resetOutOfContextForTests } from "../src/PinoLogger";
+import { Controller, Get, Logger } from '@nestjs/common';
+import { PinoLogger, InjectPinoLogger } from '../src';
+import { platforms } from './utils/platforms';
+import { TestCase } from './utils/test-case';
 
-describe("error logging", () => {
-  beforeEach(() => __resetOutOfContextForTests());
-
+describe('error logging', () => {
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      it("direct error passing", async () => {
-        const stream = new MemoryStream();
-        const context = Math.random().toString();
-        let logs = "";
+      describe('passing error directly', () => {
+        it(InjectPinoLogger.name, async () => {
+          const ctx = Math.random().toString();
 
-        stream.on("data", (chunk: string) => {
-          logs += chunk.toString();
+          @Controller('/')
+          class TestController {
+            constructor(
+              @InjectPinoLogger(ctx) private readonly logger: PinoLogger,
+            ) {}
+            @Get()
+            get() {
+              this.logger.info(new Error('direct error passing'));
+              return {};
+            }
+          }
+
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot()
+            .run();
+          expect(
+            logs.some((v) => v.req && v.context === ctx && v.err),
+          ).toBeTruthy();
         });
 
-        @Controller("/")
-        class TestController {
-          constructor(
-            @InjectPinoLogger(context) private readonly logger: PinoLogger
-          ) {}
-          @Get()
-          get() {
-            this.logger.info(new Error('direct error passing'));
-            return {};
+        it(PinoLogger.name, async () => {
+          const ctx = Math.random().toString();
+
+          @Controller('/')
+          class TestController {
+            constructor(private readonly logger: PinoLogger) {
+              this.logger.setContext(ctx);
+            }
+
+            @Get()
+            get() {
+              this.logger.info(new Error('direct error passing'));
+              return {};
+            }
           }
-        }
 
-        @Module({
-          imports: [LoggerModule.forRoot({ pinoHttp: stream })],
-          controllers: [TestController],
-        })
-        class TestModule {}
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot()
+            .run();
+          expect(
+            logs.some((v) => v.req && v.context === ctx && v.err),
+          ).toBeTruthy();
+        });
 
-        const app = await NestFactory.create(
-          TestModule,
-          new PlatformAdapter(),
-          { logger: false }
-        );
-        const server = app.getHttpServer();
+        it(Logger.name, async () => {
+          const ctx = Math.random().toString();
 
-        await app.init();
-        await fastifyExtraWait(PlatformAdapter, app);
+          @Controller('/')
+          class TestController {
+            private readonly logger = new Logger(ctx);
+            @Get()
+            get() {
+              this.logger.log(new Error('direct error passing'));
+              return {};
+            }
+          }
 
-        await request(server).get("/");
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot()
+            .run();
+          expect(
+            logs.some((v) => v.req && v.context === ctx && v.err),
+          ).toBeTruthy();
+        });
+      });
 
-        await app.close();
+      describe('passing error with `err` field', () => {
+        it(InjectPinoLogger.name, async () => {
+          const ctx = Math.random().toString();
 
-        const parsedLogs = parseLogs(logs);
+          @Controller('/')
+          class TestController {
+            constructor(
+              @InjectPinoLogger(ctx) private readonly logger: PinoLogger,
+            ) {}
+            @Get()
+            get() {
+              this.logger.info(
+                { err: new Error('pino-style error passing'), foo: 'bar' },
+                'baz',
+              );
+              return {};
+            }
+          }
 
-        const errorLogObject = parsedLogs.find(
-          v =>
-            v.req &&
-            v.context === context &&
-            (v as any).err
-        );
-        expect(errorLogObject).toBeTruthy();
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot()
+            .run();
+          expect(
+            logs.some(
+              (v) => v.req && v.context === ctx && v.err && v.foo === 'bar',
+            ),
+          ).toBeTruthy();
+        });
+
+        it(PinoLogger.name, async () => {
+          const ctx = Math.random().toString();
+
+          @Controller('/')
+          class TestController {
+            constructor(private readonly logger: PinoLogger) {
+              this.logger.setContext(ctx);
+            }
+
+            @Get()
+            get() {
+              this.logger.info(
+                { err: new Error('pino-style error passing'), foo: 'bar' },
+                'baz',
+              );
+              return {};
+            }
+          }
+
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot()
+            .run();
+          expect(
+            logs.some(
+              (v) => v.req && v.context === ctx && v.err && v.foo === 'bar',
+            ),
+          ).toBeTruthy();
+        });
+
+        it(Logger.name, async () => {
+          const ctx = Math.random().toString();
+
+          @Controller('/')
+          class TestController {
+            private readonly logger = new Logger(ctx);
+            @Get()
+            get() {
+              this.logger.log(
+                { err: new Error('pino-style error passing'), foo: 'bar' },
+                'baz',
+              );
+              return {};
+            }
+          }
+
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot()
+            .run();
+          expect(
+            logs.some(
+              (v) => v.req && v.context === ctx && v.err && v.foo === 'bar',
+            ),
+          ).toBeTruthy();
+        });
       });
     });
   }
