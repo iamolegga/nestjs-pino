@@ -9,7 +9,6 @@
     "lint": "eslint \"{src,__tests__}/**/*.ts\" --fix",
     "prebuild": "rimraf dist",
     "build": "tsc -p tsconfig.build.json",
-    "report": "cat ./coverage/lcov.info | coveralls",
     "example": "rimraf dist && tsc && LOG_LEVEL=debug node dist/example/main",
     "prepublishOnly": "npm run build && cp -r ./dist/* .",
     "postpublish": "git clean -fd"
@@ -52,7 +51,6 @@
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^4.29.3",
     "@typescript-eslint/parser": "^4.29.3",
-    "coveralls": "^3.0.6",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.24.2",

@@ -8,11 +8,9 @@
   <a href="https://www.npmjs.com/package/nestjs-pino">
     <img alt="npm" src="https://img.shields.io/npm/v/nestjs-pino" />
   </a>
-  <a href="https://travis-ci.org/iamolegga/nestjs-pino">
-    <img alt="Travis (.org)" src="https://img.shields.io/travis/iamolegga/nestjs-pino" />
-  </a>
-  <a href="https://coveralls.io/github/iamolegga/nestjs-pino?branch=master">
-    <img alt="Coverage Status" src="https://coveralls.io/repos/github/iamolegga/nestjs-pino/badge.svg?branch=master" />
+  <img alt="GitHub branch checks state" src="https://img.shields.io/github/checks-status/iamolegga/nestjs-pino/master">
+  <a href="https://codeclimate.com/github/iamolegga/nestjs-pino/test_coverage">
+    <img src="https://api.codeclimate.com/v1/badges/2821150bb93506cb66fc/test_coverage" />
   </a>
   <a href="https://snyk.io/test/github/iamolegga/nestjs-pino">
     <img alt="Snyk Vulnerabilities for npm package" src="https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino" />
