@@ -31,7 +31,7 @@
 ## Install
 
 ```sh
-npm i nestjs-pino
+npm i nestjs-pino pino-http
 ```
 
 ## Example
