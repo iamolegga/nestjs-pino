@@ -1,3 +1,10 @@
+queue_rules:
+  - name: dependabot
+    conditions:
+      - author~=^dependabot(|-preview)\[bot\]$
+      - status-success=build-and-publish
+      - status-success=security/snyk (iamolegga)
+
 pull_request_rules:
 - name: merge pull requests from dependabot if CI passes
   conditions:
@@ -5,5 +12,5 @@ pull_request_rules:
     - status-success=build-and-publish
     - status-success=security/snyk (iamolegga)
   actions:
-    merge:
-      method: merge
+    queue:
+      name: dependabot
