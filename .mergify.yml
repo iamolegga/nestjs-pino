@@ -1,8 +1,10 @@
 pull_request_rules:
 - name: merge pull requests from dependabot if CI passes
   conditions:
-  - author=dependabot-preview[bot]
-  - status-success=continuous-integration/travis-ci/pr
+    - author~=^dependabot(|-preview)\[bot\]$
+    - status-success=build-lint-and-test / build-and-publish (push)
+    - status-success=coverage / coverage (pull_request)
+    - status-success=security/snyk (iamolegga)
   actions:
     merge:
       method: merge
