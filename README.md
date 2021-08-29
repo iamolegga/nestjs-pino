@@ -8,7 +8,7 @@
   <a href="https://www.npmjs.com/package/nestjs-pino">
     <img alt="npm" src="https://img.shields.io/npm/v/nestjs-pino" />
   </a>
-  <img alt="GitHub branch checks state" src="https://img.shields.io/github/checks-status/iamolegga/nestjs-pino/master">
+  <img alt="GitHub branch checks state" src="https://badgen.net/github/checks/iamolegga/nestjs-pino">
   <a href="https://codeclimate.com/github/iamolegga/nestjs-pino/test_coverage">
     <img src="https://api.codeclimate.com/v1/badges/2821150bb93506cb66fc/test_coverage" />
   </a>
