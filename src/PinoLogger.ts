@@ -30,13 +30,21 @@ let outOfContext: pino.Logger | undefined;
 
 export function __resetOutOfContextForTests() {
   outOfContext = undefined;
+  // @ts-ignore reset root for tests only
+  PinoLogger.root = undefined;
 }
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class PinoLogger implements PinoMethods {
+  /**
+   * root is the most root logger that can be used to change params at runtime.
+   * Accessible only when `useExisting` is not set to `true` in `Params`.
+   * Readonly, but you can change it's properties.
+   */
+  static readonly root: pino.Logger;
+
   private context = '';
   private readonly contextName: string;
-  private readonly opts: any;
 
   constructor(
     @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
@@ -58,7 +66,6 @@ export class PinoLogger implements PinoMethods {
     }
 
     this.contextName = renameContext || 'context';
-    this.opts = pinoHttp;
   }
 
   trace(msg: string, ...args: any[]): void;

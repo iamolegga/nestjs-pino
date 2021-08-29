@@ -97,12 +97,21 @@ function createLoggerMiddlewares(
   }
 
   if (Array.isArray(params)) {
-    return [pinoHttp(...params), bindLoggerMiddleware];
+    const middleware = pinoHttp(...params);
+    // @ts-expect-error: root is readonly field, but this is the place where
+    // it's set actually
+    PinoLogger.root = middleware.logger;
+    return [middleware, bindLoggerMiddleware];
   }
+
+  const middleware = pinoHttp(params as any);
+  // @ts-expect-error: root is readonly field, but this is the place where
+  // it's set actually
+  PinoLogger.root = middleware.logger;
 
   // FIXME: params type here is pinoHttp.Options | pino.DestinationStream
   // pinoHttp has two overloads, each of them takes those types
-  return [pinoHttp(params as any), bindLoggerMiddleware];
+  return [middleware, bindLoggerMiddleware];
 }
 
 function bindLoggerMiddleware(
