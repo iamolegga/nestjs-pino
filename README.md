@@ -406,6 +406,21 @@ class MyService {
 }
 ```
 
+## Change pino params at runtime
+
+Pino root instance with passed via module registration params creates a separate child logger for every request. This root logger params can be changed at runtime via `PinoLogger.root` property which is the pointer to logger instance. Example:
+
+```ts
+@Controller('/')
+class TestController {
+  @Post('/change-loggin-level')
+  setLevel() {
+    PinoLogger.root.level = 'info';
+    return null;
+  }
+}
+```
+
 ## Migration
 
 ### v1

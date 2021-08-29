@@ -11,7 +11,7 @@ import {
   LoggerModuleAsyncParams,
   Params,
 } from '../../src';
-import { __resetOutOfContextForTests } from '../../src/PinoLogger';
+import { __resetOutOfContextForTests as __resetSingletons } from '../../src/PinoLogger';
 import { LogsContainer } from './logs';
 
 export class TestCase {
@@ -74,10 +74,13 @@ export class TestCase {
     return this;
   }
 
-  async run(path = '/'): Promise<LogsContainer> {
+  async run(...paths: string[]): Promise<LogsContainer> {
+    if (paths.length === 0) {
+      paths = ['/'];
+    }
     expect(this.module).toBeTruthy();
 
-    __resetOutOfContextForTests();
+    __resetSingletons();
 
     const app = await NestFactory.create(this.module, this.adapter, {
       bufferLogs: true,
@@ -85,7 +88,9 @@ export class TestCase {
     app.useLogger(app.get(Logger));
 
     const server = await app.listen(3000);
-    await request(server).get(path).expect(200);
+    for (const path of paths) {
+      await request(server).get(path).expect(200);
+    }
     await app.close();
 
     return LogsContainer.from(this.stream);
