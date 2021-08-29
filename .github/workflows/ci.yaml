@@ -1,4 +1,4 @@
-name: build-and-package-alpha
+name: build-lint-and-test
 
 on:
   push:
@@ -46,8 +46,8 @@ jobs:
 
       - name: Set version
         run: |
-          npm version --no-git-tag-version $(git describe --abbrev=0 --tags)-alpha.$(git rev-parse --short=6 ${{ github.sha }})
+          npm version --no-git-tag-version $(git describe --abbrev=0 --tags)-alpha.$(git rev-parse --short=6 ${{ github.sha }}) || true
 
-      - run: npm publish --tag alpha
+      - run: npm publish --tag alpha || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
