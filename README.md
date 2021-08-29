@@ -374,6 +374,38 @@ Since logger substitution has appeared in NestJS@8 the main purpose of `Logger` 
 
 With such change it's not possible to detect if method was called by app internaly and the last argument is context or `Logger` was injected in some service via `constructor(private logger: Logger) {}` and the last argument is interpolation value for example.
 
+## Assign extra fields for future calls
+
+You can enrich logs before calling log methods. It's possible by using `assign` method of `PinoLogger` instance. As `Logger` class is used only for NestJS built-in `Logger` substitution via `app.useLogger(...)` this feature is only limited to `PinoLogger` class. Example:
+
+```ts
+
+@Controller('/')
+class TestController {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly service: MyService,
+  ) {}
+
+  @Get()
+  get() {
+    // assign extra fields in one place...
+    this.logger.assign({ userID: '42' });
+    return this.service.test();
+  }
+}
+
+@Injectable()
+class MyService {
+  private readonly logger = new Logger(MyService.name);
+
+  test() {
+    // ...and it will be logged in another one
+    this.logger.log('hello world');
+  }
+}
+```
+
 ## Migration
 
 ### v1

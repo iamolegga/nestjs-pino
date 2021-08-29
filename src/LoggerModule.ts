@@ -18,7 +18,7 @@ import {
 } from './params';
 import { PinoLogger } from './PinoLogger';
 import { createProvidersForDecorated } from './InjectPinoLogger';
-import { storage } from './storage';
+import { Store, storage } from './storage';
 
 const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
 
@@ -112,5 +112,5 @@ function bindLoggerMiddleware(
 ) {
   // @ts-ignore: run requires arguments for next but should not because it can
   // be called without arguments
-  storage.run(req.log, next);
+  storage.run(new Store(req.log), next);
 }

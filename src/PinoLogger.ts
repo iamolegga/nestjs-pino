@@ -130,7 +130,17 @@ export class PinoLogger implements PinoMethods {
   public get logger(): pino.Logger {
     // outOfContext is always set in runtime before starts using
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return storage.getStore() || outOfContext!;
+    return storage.getStore()?.logger || outOfContext!;
+  }
+
+  public assign(fields: pino.Bindings) {
+    const store = storage.getStore();
+    if (!store) {
+      throw new Error(
+        `${PinoLogger.name}: unable to assign extra fields out of request scope`,
+      );
+    }
+    store.logger = store.logger.child(fields);
   }
 }
 
