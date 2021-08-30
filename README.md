@@ -545,8 +545,6 @@ All the other cases are lead to either code duplication or unexpected behavior.
 
 <h2 align="center">Do you use this library?<br/>Don't be shy to give it a star! ★</h2>
 
----
-
 Also if you are into NestJS ecosystem you may be interested in one of my other libs:
 
 [nestjs-pino](https://github.com/iamolegga/nestjs-pino)

@@ -45,9 +45,11 @@ jobs:
           CC_TEST_REPORTER_ID: ${{ secrets.CODE_CLIMATE_REPORTER_ID }}
 
       - name: Set version
+        if: github.actor != 'dependabot[bot]'
         run: |
           npm version --no-git-tag-version $(git describe --abbrev=0 --tags)-alpha.$(git rev-parse --short=6 ${{ github.sha }}) || true
 
       - run: npm publish --tag alpha || true
+        if: github.actor != 'dependabot[bot]'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
