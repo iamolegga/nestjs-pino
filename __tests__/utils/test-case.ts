@@ -83,6 +83,7 @@ export class TestCase {
     __resetSingletons();
 
     const app = await NestFactory.create(this.module, this.adapter, {
+      abortOnError: false,
       bufferLogs: true,
     });
     app.useLogger(app.get(Logger));
