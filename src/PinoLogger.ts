@@ -8,23 +8,8 @@ type PinoMethods = Pick<
   pino.BaseLogger,
   'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 >;
-
-/**
- * This is copy of pino.LogFn but with possibilty to make method override.
- * Current usage works:
- *
- *  trace(msg: string, ...args: any[]): void;
- *  trace(obj: object, msg?: string, ...args: any[]): void;
- *  trace(...args: Parameters<LoggerFn>) {
- *    this.call('trace', ...args);
- *  }
- *
- * But if change local LoggerFn to pino.LogFn – this will say that overrides
- * are incompatible
- */
-type LoggerFn =
-  | ((msg: string, ...args: any[]) => void)
-  | ((obj: object, msg?: string, ...args: any[]) => void);
+type LogMsg = [msg: string, ...args: any[]];
+type LogObj = [obj: Record<string, any>, msg?: string, ...args: any[]];
 
 let outOfContext: pino.Logger | undefined;
 
@@ -64,43 +49,42 @@ export class PinoLogger implements PinoMethods {
         outOfContext = pino(pinoHttp);
       }
     }
-
     this.contextName = renameContext || 'context';
   }
 
-  trace(msg: string, ...args: any[]): void;
-  trace(obj: object, msg?: string, ...args: any[]): void;
-  trace(...args: Parameters<LoggerFn>) {
+  trace(...args: LogMsg): void;
+  trace(...args: LogObj): void;
+  trace(...args: LogMsg | LogObj) {
     this.call('trace', ...args);
   }
 
-  debug(msg: string, ...args: any[]): void;
-  debug(obj: object, msg?: string, ...args: any[]): void;
-  debug(...args: Parameters<LoggerFn>) {
+  debug(...args: LogMsg): void;
+  debug(...args: LogObj): void;
+  debug(...args: LogMsg | LogObj) {
     this.call('debug', ...args);
   }
 
-  info(msg: string, ...args: any[]): void;
-  info(obj: object, msg?: string, ...args: any[]): void;
-  info(...args: Parameters<LoggerFn>) {
+  info(...args: LogMsg): void;
+  info(...args: LogObj): void;
+  info(...args: LogMsg | LogObj) {
     this.call('info', ...args);
   }
 
-  warn(msg: string, ...args: any[]): void;
-  warn(obj: object, msg?: string, ...args: any[]): void;
-  warn(...args: Parameters<LoggerFn>) {
+  warn(...args: LogMsg): void;
+  warn(...args: LogObj): void;
+  warn(...args: LogMsg | LogObj) {
     this.call('warn', ...args);
   }
 
-  error(msg: string, ...args: any[]): void;
-  error(obj: object, msg?: string, ...args: any[]): void;
-  error(...args: Parameters<LoggerFn>) {
+  error(...args: LogMsg): void;
+  error(...args: LogObj): void;
+  error(...args: LogMsg | LogObj) {
     this.call('error', ...args);
   }
 
-  fatal(msg: string, ...args: any[]): void;
-  fatal(obj: object, msg?: string, ...args: any[]): void;
-  fatal(...args: Parameters<LoggerFn>) {
+  fatal(...args: LogMsg): void;
+  fatal(...args: LogObj): void;
+  fatal(...args: LogMsg | LogObj) {
     this.call('fatal', ...args);
   }
 
@@ -108,9 +92,9 @@ export class PinoLogger implements PinoMethods {
     this.context = value;
   }
 
-  private call(method: pino.Level, ...args: Parameters<LoggerFn>) {
+  private call(method: pino.Level, ...args: LogMsg | LogObj) {
     if (this.context) {
-      if (isFirstArgObject(args)) {
+      if (isLogObj(args)) {
         const firstArg = args[0];
         if (firstArg instanceof Error) {
           args = [
@@ -151,8 +135,6 @@ export class PinoLogger implements PinoMethods {
   }
 }
 
-function isFirstArgObject(
-  args: Parameters<LoggerFn>,
-): args is [obj: object, msg?: string, ...args: any[]] {
+function isLogObj(args: LogMsg | LogObj): args is LogObj {
   return typeof args[0] === 'object';
 }
