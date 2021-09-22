@@ -443,6 +443,19 @@ import { Logger } from 'nestjs-pino';
 // ...
 ```
 
+Note that for [standalone applications](https://docs.nestjs.com/standalone-applications), buffering has to be disabled manually after custom logger is ready to be used by NestJS (refer to [this issue](https://github.com/iamolegga/nestjs-pino/issues/553) for more details):
+
+```ts
+// main.ts
+import { Logger } from 'nestjs-pino';
+import { Logger as BaseLogger } from '@nestjs/common';
+// ...
+  const app = await NestFactory.createApplicationContext(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
+  BaseLogger.flush();
+// ...
+```
+
 In all the other places you can use built-in `Logger`:
 
 ```ts
