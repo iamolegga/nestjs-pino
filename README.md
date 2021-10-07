@@ -443,16 +443,16 @@ import { Logger } from 'nestjs-pino';
 // ...
 ```
 
-Note that for [standalone applications](https://docs.nestjs.com/standalone-applications), buffering has to be disabled manually after custom logger is ready to be used by NestJS (refer to [this issue](https://github.com/iamolegga/nestjs-pino/issues/553) for more details):
+Note that for [standalone applications](https://docs.nestjs.com/standalone-applications), buffering has to be [flushed using app.flushLogs()](https://github.com/nestjs/nest/blob/24e6c821a0859448646fd88831f20e4c5ae50980/packages/core/nest-application-context.ts#L136) manually after custom logger is ready to be used by NestJS (refer to [this issue](https://github.com/iamolegga/nestjs-pino/issues/553) for more details):
 
 ```ts
 // main.ts
 import { Logger } from 'nestjs-pino';
-import { Logger as BaseLogger } from '@nestjs/common';
-// ...
+
+// ... 
   const app = await NestFactory.createApplicationContext(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  BaseLogger.flush();
+  app.flush();
 // ...
 ```
 
