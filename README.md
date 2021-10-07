@@ -452,7 +452,7 @@ import { Logger } from 'nestjs-pino';
 // ... 
   const app = await NestFactory.createApplicationContext(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  app.flush();
+  app.flushLogs();
 // ...
 ```
 
