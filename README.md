@@ -448,11 +448,10 @@ Note that for [standalone applications](https://docs.nestjs.com/standalone-appli
 ```ts
 // main.ts
 import { Logger } from 'nestjs-pino';
-import { Logger as BaseLogger } from '@nestjs/common';
 // ...
   const app = await NestFactory.createApplicationContext(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  BaseLogger.flush();
+  app.flushLogs();
 // ...
 ```
 
