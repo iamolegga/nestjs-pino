@@ -55,9 +55,9 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-prettier": "^4.0.0",
-    "jest": "27.3.0",
+    "jest": "27.3.1",
     "memorystream": "^0.3.1",
-    "pino-http": "^5.6.0",
+    "pino-http": "^6.0.0",
     "prettier": "^2.3.2",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
@@ -86,6 +86,6 @@
     "testEnvironment": "node"
   },
   "peerDependencies": {
-    "pino-http": "^5.6.0"
+    "pino-http": "^6.0.0"
   }
 }
