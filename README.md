@@ -378,21 +378,21 @@ With such change it's not possible to detect if method was called by app interna
 
 ## Assign extra fields for future calls
 
-You can enrich logs before calling log methods. It's possible by using `assign` method of `PinoLogger` instance. As `Logger` class is used only for NestJS built-in `Logger` substitution via `app.useLogger(...)` this feature is only limited to `PinoLogger` class. Example:
+You can enrich logs before calling log methods. It's possible by using `assign` function. Example:
 
 ```ts
+import { assign } from 'nestjs-pino';
 
 @Controller('/')
 class TestController {
   constructor(
-    private readonly logger: PinoLogger,
     private readonly service: MyService,
   ) {}
 
   @Get()
   get() {
     // assign extra fields in one place...
-    this.logger.assign({ userID: '42' });
+    assign({ userID: '42' });
     return this.service.test();
   }
 }

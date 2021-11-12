@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { Injectable, Inject, Scope } from '@nestjs/common';
 import * as pino from 'pino';
+import { assign } from './assign';
 import { Params, isPassedLogger, PARAMS_PROVIDER_TOKEN } from './params';
 import { storage } from './storage';
 
@@ -140,14 +141,12 @@ export class PinoLogger implements PinoMethods {
     return storage.getStore()?.logger || outOfContext!;
   }
 
-  public assign(fields: pino.Bindings) {
-    const store = storage.getStore();
-    if (!store) {
-      throw new Error(
-        `${PinoLogger.name}: unable to assign extra fields out of request scope`,
-      );
-    }
-    store.logger = store.logger.child(fields);
+  /**
+   * @deprecated in favour of `assign` function from the package.
+   * No need to inject `PinoLogger`
+   */
+  public assign(fields: pino.Bindings): void {
+    assign(fields);
   }
 }
 
