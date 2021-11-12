@@ -408,6 +408,8 @@ class MyService {
 }
 ```
 
+Due to the [limitation](https://github.com/pinojs/pino-http/issues/30) of the underlying `http-pino` `assign` cannot extend `Request completed` logs.
+
 ## Change pino params at runtime
 
 Pino root instance with passed via module registration params creates a separate child logger for every request. This root logger params can be changed at runtime via `PinoLogger.root` property which is the pointer to logger instance. Example:
