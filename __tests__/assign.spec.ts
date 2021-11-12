@@ -5,14 +5,14 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
-import { assign, PinoLogger } from '../src';
+import { PinoLogger } from '../src';
 import { platforms } from './utils/platforms';
 import { TestCase } from './utils/test-case';
 
 describe('assign', () => {
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
-      it('in request context via PinoLogger', async () => {
+      it('in request context', async () => {
         const msg = Math.random().toString();
 
         @Injectable()
@@ -35,41 +35,6 @@ describe('assign', () => {
           @Get()
           get() {
             this.logger.assign({ foo: 'bar' });
-            return this.service.test();
-          }
-        }
-
-        const logs = await new TestCase(new PlatformAdapter(), {
-          controllers: [TestController],
-          providers: [TestService],
-        })
-          .forRoot()
-          .run();
-
-        const wanted = logs.some((l) => l.msg === msg && l.foo === 'bar');
-        expect(wanted).toBeTruthy();
-      });
-
-      it('in request context via assign', async () => {
-        const msg = Math.random().toString();
-
-        @Injectable()
-        class TestService {
-          private readonly logger = new Logger(TestService.name);
-
-          test() {
-            this.logger.log(msg);
-            return {};
-          }
-        }
-
-        @Controller('/')
-        class TestController {
-          constructor(private readonly service: TestService) {}
-
-          @Get()
-          get() {
-            assign({ foo: 'bar' });
             return this.service.test();
           }
         }
