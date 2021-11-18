@@ -17,6 +17,7 @@ import { LogsContainer } from './logs';
 export class TestCase {
   private module?: Type<any>;
   private stream: pino.DestinationStream;
+  private expectedCode = 200;
 
   constructor(
     private readonly adapter: AbstractHttpAdapter<any, any, any>,
@@ -74,6 +75,11 @@ export class TestCase {
     return this;
   }
 
+  expectError(code: number): this {
+    this.expectedCode = code;
+    return this;
+  }
+
   async run(...paths: string[]): Promise<LogsContainer> {
     if (paths.length === 0) {
       paths = ['/'];
@@ -89,7 +95,7 @@ export class TestCase {
 
     const server = await app.listen(3000);
     for (const path of paths) {
-      await request(server).get(path).expect(200);
+      await request(server).get(path).expect(this.expectedCode);
     }
     await app.close();
 
