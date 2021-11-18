@@ -6,7 +6,7 @@ export type LogObject = {
   req?: { id: number };
   res?: Record<string, any>;
   context?: string;
-  err?: any;
+  err?: { message: string; stack: string };
   [key: string]: any;
 };
 

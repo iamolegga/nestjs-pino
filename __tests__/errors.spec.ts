@@ -172,6 +172,41 @@ describe('error logging', () => {
           ).toBeTruthy();
         });
       });
+
+      describe('keeps stack of thrown error', () => {
+        it('built-in error handler logs with correct stack', async () => {
+          const msg = Math.random().toString();
+
+          @Controller('/')
+          class TestController {
+            @Get()
+            get() {
+              throw new Error(msg);
+            }
+          }
+
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot()
+            .expectError(500)
+            .run();
+
+          expect(
+            logs.some(
+              (v) =>
+                v.req &&
+                v.msg === msg &&
+                v.err &&
+                v.err.message === msg &&
+                v.err.stack.includes(__filename) &&
+                v.err.stack.includes(
+                  `${TestController.name}.${TestController.prototype.get.name}`,
+                ),
+            ),
+          ).toBeTruthy();
+        });
+      });
     });
   }
 });
