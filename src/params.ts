@@ -1,6 +1,5 @@
 import * as pinoHttp from 'pino-http';
-import * as pino from 'pino';
-import { DestinationStream } from 'pino';
+import { pino } from 'pino';
 import {
   MiddlewareConfigProxy,
   ModuleMetadata,
@@ -15,8 +14,8 @@ export interface Params {
    */
   pinoHttp?:
     | pinoHttp.Options
-    | DestinationStream
-    | [pinoHttp.Options, DestinationStream];
+    | pino.DestinationStream
+    | [pinoHttp.Options, pino.DestinationStream];
 
   /**
    * Optional parameter for routing. It should implement interface of

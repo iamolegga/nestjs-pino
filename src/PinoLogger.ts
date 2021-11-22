@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { Injectable, Inject, Scope } from '@nestjs/common';
-import * as pino from 'pino';
+import { pino } from 'pino';
 import { Params, isPassedLogger, PARAMS_PROVIDER_TOKEN } from './params';
 import { storage } from './storage';
 
