@@ -54,7 +54,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-prettier": "^4.0.0",
-    "jest": "27.3.1",
+    "jest": "27.4.3",
     "memorystream": "^0.3.1",
     "pino": "^7.5.1",
     "pino-http": "github:pinojs/pino-http#master",

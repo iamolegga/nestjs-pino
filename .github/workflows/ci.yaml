@@ -1,4 +1,4 @@
-name: build-lint-and-test
+name: build-lint-test-publish
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - "**/*"
 
 jobs:
-  build-and-publish:
+  build-lint-test-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
