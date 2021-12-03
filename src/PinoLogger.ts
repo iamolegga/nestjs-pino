@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { Injectable, Inject, Scope } from '@nestjs/common';
-import * as pino from 'pino';
+import pino from 'pino';
 import { Params, isPassedLogger, PARAMS_PROVIDER_TOKEN } from './params';
 import { storage } from './storage';
 
 type PinoMethods = Pick<
-  pino.BaseLogger,
+  pino.Logger,
   'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 >;
 
@@ -69,37 +69,37 @@ export class PinoLogger implements PinoMethods {
   }
 
   trace(msg: string, ...args: any[]): void;
-  trace(obj: object, msg?: string, ...args: any[]): void;
+  trace(obj: unknown, msg?: string, ...args: any[]): void;
   trace(...args: Parameters<LoggerFn>) {
     this.call('trace', ...args);
   }
 
   debug(msg: string, ...args: any[]): void;
-  debug(obj: object, msg?: string, ...args: any[]): void;
+  debug(obj: unknown, msg?: string, ...args: any[]): void;
   debug(...args: Parameters<LoggerFn>) {
     this.call('debug', ...args);
   }
 
   info(msg: string, ...args: any[]): void;
-  info(obj: object, msg?: string, ...args: any[]): void;
+  info(obj: unknown, msg?: string, ...args: any[]): void;
   info(...args: Parameters<LoggerFn>) {
     this.call('info', ...args);
   }
 
   warn(msg: string, ...args: any[]): void;
-  warn(obj: object, msg?: string, ...args: any[]): void;
+  warn(obj: unknown, msg?: string, ...args: any[]): void;
   warn(...args: Parameters<LoggerFn>) {
     this.call('warn', ...args);
   }
 
   error(msg: string, ...args: any[]): void;
-  error(obj: object, msg?: string, ...args: any[]): void;
+  error(obj: unknown, msg?: string, ...args: any[]): void;
   error(...args: Parameters<LoggerFn>) {
     this.call('error', ...args);
   }
 
   fatal(msg: string, ...args: any[]): void;
-  fatal(obj: object, msg?: string, ...args: any[]): void;
+  fatal(obj: unknown, msg?: string, ...args: any[]): void;
   fatal(...args: Parameters<LoggerFn>) {
     this.call('fatal', ...args);
   }

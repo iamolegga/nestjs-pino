@@ -1,5 +1,5 @@
 import { Injectable, LoggerService, Inject } from '@nestjs/common';
-import { Level } from 'pino';
+import pino from 'pino';
 import { PinoLogger } from './PinoLogger';
 import { Params, PARAMS_PROVIDER_TOKEN } from './params';
 
@@ -34,7 +34,7 @@ export class Logger implements LoggerService {
     this.call('error', message, ...optionalParams);
   }
 
-  private call(level: Level, message: any, ...optionalParams: any[]) {
+  private call(level: pino.Level, message: any, ...optionalParams: any[]) {
     const objArg: Record<string, any> = {};
 
     // optionalParams contains extra params passed to logger
@@ -80,7 +80,7 @@ export class Logger implements LoggerService {
    * @see https://github.com/search?l=TypeScript&q=org%3Anestjs+logger+error+stack&type=Code
    */
   private isWrongExceptionsHandlerContract(
-    level: Level,
+    level: pino.Level,
     message: any,
     params: any[],
   ): params is [string] {

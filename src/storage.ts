@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { Logger } from 'pino';
+import pino from 'pino';
 
 export class Store {
-  constructor(public logger: Logger) {}
+  constructor(public logger: pino.Logger) {}
 }
 
 export const storage = new AsyncLocalStorage<Store>();

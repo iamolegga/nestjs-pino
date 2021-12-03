@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Provider } from '@nestjs/common/interfaces';
 import * as express from 'express';
-import * as pinoHttp from 'pino-http';
+import pinoHttp from 'pino-http';
 import { Logger } from './Logger';
 import {
   Params,

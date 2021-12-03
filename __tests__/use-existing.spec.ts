@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import MemoryStream = require('memorystream');
-import * as pino from 'pino';
+import pino from 'pino';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { TestCase } from './utils/test-case';
 import { LogsContainer } from './utils/logs';
