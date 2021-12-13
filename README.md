@@ -297,7 +297,7 @@ Please, read [pino extreme mode docs](https://github.com/pinojs/pino/blob/master
 If you know what you're doing, you can enable it like so:
 
 ```ts
-import * as pino from 'pino';
+import pino from 'pino';
 import { LoggerModule } from 'nestjs-pino';
 
 const dest = pino.extreme();

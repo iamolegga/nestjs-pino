@@ -1,22 +1,18 @@
-import * as pinoHttp from 'pino-http';
-import * as pino from 'pino';
-import { DestinationStream } from 'pino';
+import { Options } from 'pino-http';
+import { Logger, DestinationStream } from 'pino';
 import {
   MiddlewareConfigProxy,
   ModuleMetadata,
 } from '@nestjs/common/interfaces';
 
-export type PassedLogger = { logger: pino.Logger };
+export type PassedLogger = { logger: Logger };
 
 export interface Params {
   /**
    * Optional parameters for `pino-http` module
    * @see https://github.com/pinojs/pino-http#pinohttpopts-stream
    */
-  pinoHttp?:
-    | pinoHttp.Options
-    | DestinationStream
-    | [pinoHttp.Options, DestinationStream];
+  pinoHttp?: Options | DestinationStream | [Options, DestinationStream];
 
   /**
    * Optional parameter for routing. It should implement interface of

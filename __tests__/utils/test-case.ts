@@ -3,8 +3,8 @@ import { AbstractHttpAdapter, NestFactory } from '@nestjs/core';
 import { Module, ModuleMetadata, Type } from '@nestjs/common';
 import MemoryStream = require('memorystream');
 import * as request from 'supertest';
-import * as pinoHttp from 'pino-http';
-import * as pino from 'pino';
+import { Options } from 'pino-http';
+import pino from 'pino';
 import {
   Logger,
   LoggerModule,
@@ -112,7 +112,7 @@ export class TestCase {
         return {
           ...params,
           pinoHttp: [
-            (params!.pinoHttp as [pinoHttp.Options, pino.DestinationStream])[0],
+            (params!.pinoHttp as [Options, pino.DestinationStream])[0],
             this.stream,
           ],
         };
@@ -120,7 +120,7 @@ export class TestCase {
         return {
           ...params,
           pinoHttp: {
-            ...(params!.pinoHttp as pinoHttp.Options),
+            ...(params!.pinoHttp as Options),
             stream: this.stream,
           },
         };
