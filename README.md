@@ -425,6 +425,17 @@ class TestController {
 }
 ```
 
+## Expose stack trace and error class in `err` property
+
+By default, `pino-http` exposes `err` property with a stack trace and error details, however, this `err` property contains default error details, which do not tell anything about actual error. To expose actual error details you need you to use a NestJS interceptor which captures exceptions and assigns them to the response object `err` property which is later processed by pino-http:   
+
+```typescript
+import { LoggerErrorInterceptor } from 'nestjs-pino';
+
+const app = await NestFactory.create(AppModule);
+app.useGlobalInterceptors(LoggerErrorInterceptor);
+```
+
 ## Migration
 
 ### v1
