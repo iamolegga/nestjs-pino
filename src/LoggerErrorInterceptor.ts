@@ -12,12 +12,12 @@ export class LoggerErrorInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<any> | Promise<Observable<any>> {
-    return next
-      .handle()
-      .pipe(
-        catchError((error) =>
-          throwError((context.switchToHttp().getResponse().err = error)),
-        ),
-      );
+    return next.handle().pipe(
+      catchError((error) => {
+        return throwError(
+          () => (context.switchToHttp().getResponse().err = error),
+        );
+      }),
+    );
   }
 }
