@@ -37,8 +37,10 @@ describe('error intercepting', () => {
         expect(
           result.find((log) => log.msg === 'request errored'),
         ).toMatchObject({
-          message: 'Test Error Message',
-          type: 'CustomError',
+          err: {
+            message: 'Test Error Message',
+            type: 'CustomError',
+          },
         });
       });
     });

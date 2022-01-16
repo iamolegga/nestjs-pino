@@ -14,9 +14,19 @@ export class LoggerErrorInterceptor implements NestInterceptor {
   ): Observable<any> | Promise<Observable<any>> {
     return next.handle().pipe(
       catchError((error) => {
-        return throwError(
-          () => (context.switchToHttp().getResponse().err = error),
-        );
+        return throwError(() => {
+          const response = context.switchToHttp().getResponse();
+
+          const isFastifyResponse = response.raw !== undefined;
+
+          if (isFastifyResponse) {
+            response.raw.err = error;
+          } else {
+            response.err = error;
+          }
+
+          return error;
+        });
       }),
     );
   }
