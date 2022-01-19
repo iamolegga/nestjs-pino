@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { Injectable, Inject, Scope } from '@nestjs/common';
 import pino from 'pino';
+import { Request } from 'express';
 import { Params, isPassedLogger, PARAMS_PROVIDER_TOKEN } from './params';
 import { storage } from './storage';
 
@@ -138,6 +139,17 @@ export class PinoLogger implements PinoMethods {
     // outOfContext is always set in runtime before starts using
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return storage.getStore()?.logger || outOfContext!;
+  }
+
+  public getRequestContext(): Request {
+    const store = storage.getStore();
+    const requestContext = storage.getStore()?.logger?.bindings()?.req;
+    if (!store || !requestContext) {
+      throw new Error(
+        `${PinoLogger.name}: unable to assign extra fields out of request scope`,
+      );
+    }
+    return requestContext;
   }
 
   public assign(fields: pino.Bindings) {

@@ -436,6 +436,24 @@ const app = await NestFactory.create(AppModule);
 app.useGlobalInterceptors(LoggerErrorInterceptor);
 ```
 
+## Get request context from AsyncLocalStorage
+If you want get access to the request context saved in AsyncLocalStorage. <br>
+You should inject PinoLogger and call getRequestContext method:
+```ts
+import { PinoLogger } from "nestjs-pino";
+
+@Controller()
+export class AppController {
+    constructor(private readonly logger: PinoLogger) {}
+    
+    @Get()
+    get(): string {
+        const request = this.logger.getRequestContext();
+        return 'hi';
+    }
+}
+```
+
 ## Migration
 
 ### v1
