@@ -433,7 +433,7 @@ By default, `pino-http` exposes `err` property with a stack trace and error deta
 import { LoggerErrorInterceptor } from 'nestjs-pino';
 
 const app = await NestFactory.create(AppModule);
-app.useGlobalInterceptors(LoggerErrorInterceptor);
+app.useGlobalInterceptors(new LoggerErrorInterceptor());
 ```
 
 ## Migration
