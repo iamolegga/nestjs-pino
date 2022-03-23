@@ -1,5 +1,13 @@
 <p align="center">
-  <img alt="NestJS-Pino logo" src="https://raw.githubusercontent.com/iamolegga/nestjs-pino/master/logo.png"/>
+  <img alt="War in Ukraine" src="https://raw.githubusercontent.com/iamolegga/nestjs-pino/master/war.jpg"/>
+  <br/>
+  Children wait in a bomb shelter in Mariupol, Ukraine. AP
+  <br/>
+  Help save their lives by donating:
+  <br/>
+  ・<a href="https://war.ukraine.ua/donate/">Armed Forces of Ukraine</a>・<a href="https://www.comebackalive.in.ua/">Ukrainian volunteers</a>・
+  <br/>
+  Thanks for your support!
 </p>
 
 <h1 align="center">NestJS-Pino</h1>
