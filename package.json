@@ -87,6 +87,7 @@
     "testEnvironment": "node"
   },
   "peerDependencies": {
-    "pino-http": "^6.4.0"
+    "pino-http": "^6.4.0",
+    "@nestjs/common": "^8.0.0"
   }
 }
