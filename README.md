@@ -296,11 +296,11 @@ class ConfigModule {}
 class TestModule {}
 ```
 
-### Extreme mode
+### Asynchronous logging
 
-> In essence, `extreme` mode enables even faster performance by `pino`.
+> In essence, asynchronous logging enables even faster performance by `pino`.
 
-Please, read [pino extreme mode docs](https://github.com/pinojs/pino/blob/master/docs/extreme.md#extreme-mode) first. There is a risk of some logs being lost, but you can [minimize it](https://github.com/pinojs/pino/blob/master/docs/extreme.md#log-loss-prevention).
+Please, read [pino asynchronous mode docs](https://github.com/pinojs/pino/blob/master/docs/asynchronous.md) first. There is a possibility of the most recently buffered log messages being lost in case of a system failure, e.g. a power cut.
 
 If you know what you're doing, you can enable it like so:
 
@@ -308,15 +308,24 @@ If you know what you're doing, you can enable it like so:
 import pino from 'pino';
 import { LoggerModule } from 'nestjs-pino';
 
-const dest = pino.extreme();
-const logger = pino(dest);
-
 @Module({
-  imports: [LoggerModule.forRoot({ pinoHttp: { logger } })],
+  imports: [
+    LoggerModule.forRoot({
+      pinoHttp: {
+        stream: pino.destination({
+          dest: './my-file', // omit for stdout
+          minLength: 4096, // Buffer before writing
+          sync: false, // Asynchronous logging
+        }),
+      },
+    }),
+  ],
   ...
 })
 class MyModule {}
 ```
+
+See [pino.destination](https://github.com/pinojs/pino/blob/master/docs/api.md#pino-destination)
 
 ## Testing a class that uses @InjectPinoLogger
 
