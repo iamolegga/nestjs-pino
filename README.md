@@ -32,7 +32,7 @@
 
 ---
 
-<p align="center"><b>This is documentation for v2 which works with NestJS 8+.<br/>Please see documentation for the previous major version which works with NestJS < 8 <a href="https://github.com/iamolegga/nestjs-pino/tree/v1.2.0#readme">here</a>.</b></p>
+<p align="center"><b>This is documentation for v2+ which works with NestJS 8+.<br/>Please see documentation for the previous major version which works with NestJS < 8 <a href="https://github.com/iamolegga/nestjs-pino/tree/v1.4.0#readme">here</a>.</b></p>
 
 ---
 
