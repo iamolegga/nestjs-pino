@@ -3,7 +3,7 @@ name: build-lint-test-publish
 on:
   push:
     branches:
-      - "**/*"
+      - '**/*'
 
 jobs:
   build-lint-test-publish:
@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '12.x'
+          node-version: '14.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install npm v7
