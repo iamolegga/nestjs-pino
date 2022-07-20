@@ -19,7 +19,7 @@
   ],
   "engineStrict": true,
   "engines": {
-    "node": ">=12.17.0 || >=13.10.0"
+    "node": ">= 14"
   },
   "repository": {
     "type": "git",
