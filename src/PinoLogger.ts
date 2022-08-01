@@ -26,7 +26,7 @@ type LoggerFn =
   | ((msg: string, ...args: any[]) => void)
   | ((obj: object, msg?: string, ...args: any[]) => void);
 
-let outOfContext: pino.Logger | undefined;
+export let outOfContext: pino.Logger | undefined;
 
 export function __resetOutOfContextForTests() {
   outOfContext = undefined;

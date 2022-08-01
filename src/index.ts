@@ -1,8 +1,9 @@
 export { LoggerModule } from './LoggerModule';
 export { Logger } from './Logger';
-export { PinoLogger } from './PinoLogger';
+export { PinoLogger, outOfContext } from './PinoLogger';
 export { InjectPinoLogger, getLoggerToken } from './InjectPinoLogger';
 export { LoggerErrorInterceptor } from './LoggerErrorInterceptor';
+export { Store, storage } from './storage';
 export {
   Params,
   LoggerModuleAsyncParams,
