@@ -90,36 +90,39 @@ export class LoggerModule implements NestModule {
 
 function createLoggerMiddlewares(
   params: NonNullable<Params['pinoHttp']>,
-  useExisting?: true,
+  useExisting = false,
 ) {
   if (useExisting) {
-    return [bindLoggerMiddleware];
+    return [bindLoggerMiddlewareFactory(useExisting)];
   }
 
-  if (Array.isArray(params)) {
-    const middleware = pinoHttp(...params);
-    // @ts-expect-error: root is readonly field, but this is the place where
-    // it's set actually
-    PinoLogger.root = middleware.logger;
-    return [middleware, bindLoggerMiddleware];
-  }
+  const middleware = pinoHttp(
+    ...(Array.isArray(params) ? params : [params as any]),
+  );
 
-  const middleware = pinoHttp(params as any);
   // @ts-expect-error: root is readonly field, but this is the place where
   // it's set actually
   PinoLogger.root = middleware.logger;
 
   // FIXME: params type here is pinoHttp.Options | pino.DestinationStream
   // pinoHttp has two overloads, each of them takes those types
-  return [middleware, bindLoggerMiddleware];
+  return [middleware, bindLoggerMiddlewareFactory(useExisting)];
 }
 
-function bindLoggerMiddleware(
-  req: express.Request,
-  _res: express.Response,
-  next: express.NextFunction,
-) {
-  // @ts-ignore: run requires arguments for next but should not because it can
-  // be called without arguments
-  storage.run(new Store(req.log), next);
+function bindLoggerMiddlewareFactory(useExisting: boolean) {
+  return function bindLoggerMiddleware(
+    req: express.Request,
+    _res: express.Response,
+    next: express.NextFunction,
+  ) {
+    let log = req.log;
+
+    if (!useExisting && (req.allLogs?.length ?? 0) > 0) {
+      log = req.allLogs[req.allLogs.length - 1];
+    }
+
+    // @ts-ignore: run requires arguments for next but should not because it can
+    // be called without arguments
+    storage.run(new Store(log), next);
+  };
 }
