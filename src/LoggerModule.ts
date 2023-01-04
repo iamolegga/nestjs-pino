@@ -117,7 +117,7 @@ function bindLoggerMiddlewareFactory(useExisting: boolean) {
   ) {
     let log = req.log;
 
-    if (!useExisting && (req.allLogs?.length ?? 0) > 0) {
+    if (!useExisting && req.allLogs) {
       log = req.allLogs[req.allLogs.length - 1];
     }
 
