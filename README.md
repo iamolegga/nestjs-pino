@@ -175,7 +175,7 @@ The following interface is using for the configuration:
 interface Params {
   /**
    * Optional parameters for `pino-http` module
-   * @see https://github.com/pinojs/pino-http#pinohttpopts-stream
+   * @see https://github.com/pinojs/pino-http#api
    */
   pinoHttp?:
     | pinoHttp.Options
@@ -242,8 +242,13 @@ import { LoggerModule } from 'nestjs-pino';
           transport: process.env.NODE_ENV !== 'production'
             ? { target: 'pino-pretty' }
             : undefined,
-          useLevelLabels: true,
-          // and all the others...
+
+
+          // and all the other fields of:
+          // - https://github.com/pinojs/pino-http#api
+          // - https://github.com/pinojs/pino/blob/HEAD/docs/api.md#options-object
+
+
         },
         someWritableStream
       ],
