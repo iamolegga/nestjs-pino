@@ -234,8 +234,7 @@ import { LoggerModule } from 'nestjs-pino';
 @Module({
   imports: [
     LoggerModule.forRoot({
-      pinoHttp: [
-        {
+      pinoHttp: {
           name: 'add some name to every JSON line',
           level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
           // install 'pino-pretty' package in order to use the following option
@@ -243,15 +242,11 @@ import { LoggerModule } from 'nestjs-pino';
             ? { target: 'pino-pretty' }
             : undefined,
 
-
           // and all the other fields of:
           // - https://github.com/pinojs/pino-http#api
           // - https://github.com/pinojs/pino/blob/HEAD/docs/api.md#options-object
-
-
-        },
-        someWritableStream
-      ],
+      },
+      // someWritableStream
       forRoutes: [MyController],
       exclude: [{ method: RequestMethod.ALL, path: 'check' }]
     })
