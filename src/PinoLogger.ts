@@ -43,8 +43,8 @@ export class PinoLogger implements PinoMethods {
    */
   static readonly root: pino.Logger;
 
-  private context = '';
-  private readonly contextName: string;
+  protected context = '';
+  protected readonly contextName: string;
 
   constructor(
     @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
@@ -108,7 +108,7 @@ export class PinoLogger implements PinoMethods {
     this.context = value;
   }
 
-  private call(method: pino.Level, ...args: Parameters<LoggerFn>) {
+  protected call(method: pino.Level, ...args: Parameters<LoggerFn>) {
     if (this.context) {
       if (isFirstArgObject(args)) {
         const firstArg = args[0];
