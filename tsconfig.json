@@ -11,7 +11,8 @@
     "outDir": "./dist",
     "incremental": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true
+    "strict": true,
+    "skipLibCheck": true
   },
   "include": ["src", "example", "__tests__"]
 }
