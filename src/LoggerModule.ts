@@ -7,7 +7,7 @@ import {
   RequestMethod,
   Inject,
 } from '@nestjs/common';
-import { Provider } from '@nestjs/common/interfaces';
+import { Provider, Type } from '@nestjs/common/interfaces';
 import * as express from 'express';
 import { pinoHttp } from 'pino-http';
 import { Logger } from './Logger';
@@ -15,6 +15,7 @@ import {
   Params,
   LoggerModuleAsyncParams,
   PARAMS_PROVIDER_TOKEN,
+  LoggerModuleOptionsFactory,
 } from './params';
 import { PinoLogger } from './PinoLogger';
 import { createProvidersForDecorated } from './InjectPinoLogger';
@@ -41,11 +42,7 @@ export class LoggerModule implements NestModule {
   }
 
   static forRootAsync(params: LoggerModuleAsyncParams): DynamicModule {
-    const paramsProvider: Provider<Params | Promise<Params>> = {
-      provide: PARAMS_PROVIDER_TOKEN,
-      useFactory: params.useFactory,
-      inject: params.inject,
-    };
+    const paramsProviders = this.createAsyncParamsProvider(params);
 
     const decorated = createProvidersForDecorated();
 
@@ -53,7 +50,7 @@ export class LoggerModule implements NestModule {
       Logger,
       ...decorated,
       PinoLogger,
-      paramsProvider,
+      ...paramsProviders,
       ...(params.providers || []),
     ];
 
@@ -61,8 +58,33 @@ export class LoggerModule implements NestModule {
       module: LoggerModule,
       imports: params.imports,
       providers,
-      exports: [Logger, ...decorated, PinoLogger, paramsProvider],
+      exports: [Logger, ...decorated, PinoLogger, ...paramsProviders],
     };
+  }
+
+  private static createAsyncParamsProvider(
+    params: LoggerModuleAsyncParams,
+  ): Provider[] {
+    if (params.useFactory) {
+      return [
+        {
+          provide: PARAMS_PROVIDER_TOKEN,
+          useFactory: params.useFactory,
+          inject: params.inject,
+        },
+      ];
+    }
+
+    const useClass = params.useClass as Type<LoggerModuleOptionsFactory>;
+    return [
+      { provide: useClass, useClass },
+      {
+        provide: PARAMS_PROVIDER_TOKEN,
+        useFactory: async (optionsFactory: LoggerModuleOptionsFactory) =>
+          await optionsFactory.createLoggerOptions(),
+        inject: [useClass],
+      },
+    ];
   }
 
   constructor(@Inject(PARAMS_PROVIDER_TOKEN) private readonly params: Params) {}

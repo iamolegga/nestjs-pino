@@ -51,7 +51,7 @@ export class TestCase {
     asyncParams: LoggerModuleAsyncParams,
     skipStreamInjection = false,
   ): this {
-    if (!skipStreamInjection) {
+    if (!skipStreamInjection && asyncParams.useFactory) {
       const useFactoryOld = asyncParams.useFactory;
       asyncParams.useFactory = (...args: any[]) => {
         const params = useFactoryOld(...args);
@@ -60,6 +60,28 @@ export class TestCase {
         }
         return this.injectStream(params);
       };
+    }
+
+    if (!skipStreamInjection && asyncParams.useClass) {
+      const useClass = asyncParams.useClass;
+      const extendUseClass = function (
+        injectStream: (params: Params) => Params,
+      ) {
+        return class extends useClass {
+          constructor(...args: any[]) {
+            super(...args);
+          }
+
+          createLoggerOptions(): Params | Promise<Params> {
+            const params = super.createLoggerOptions();
+            if ('then' in params) {
+              return params.then((p) => injectStream(p));
+            }
+            return injectStream(params);
+          }
+        };
+      };
+      asyncParams.useClass = extendUseClass(this.injectStream.bind(this));
     }
 
     @Module({

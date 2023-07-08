@@ -7,4 +7,5 @@ export {
   Params,
   LoggerModuleAsyncParams,
   PARAMS_PROVIDER_TOKEN,
+  LoggerModuleOptionsFactory,
 } from './params';

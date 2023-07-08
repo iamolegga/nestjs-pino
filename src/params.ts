@@ -3,6 +3,7 @@ import { Logger, DestinationStream } from 'pino';
 import {
   MiddlewareConfigProxy,
   ModuleMetadata,
+  Type,
 } from '@nestjs/common/interfaces';
 
 export type PassedLogger = { logger: Logger };
@@ -55,9 +56,14 @@ export interface Params {
   renameContext?: string;
 }
 
+export interface LoggerModuleOptionsFactory {
+  createLoggerOptions(): Promise<Params> | Params;
+}
+
 export interface LoggerModuleAsyncParams
   extends Pick<ModuleMetadata, 'imports' | 'providers'> {
-  useFactory: (...args: any[]) => Params | Promise<Params>;
+  useFactory?: (...args: any[]) => Params | Promise<Params>;
+  useClass?: Type<LoggerModuleOptionsFactory>;
   inject?: any[];
 }
 
