@@ -55,7 +55,7 @@ describe('no context', () => {
 
         const ctrlLog = logs.find((v) => v.msg === msg);
         expect(ctrlLog).toBeTruthy();
-        expect(ctrlLog).not.toHaveProperty('context');
+        expect(ctrlLog?.context).toEqual(TestController.name);
       });
     });
   }

@@ -103,6 +103,13 @@ export class MyService {
     private readonly logger: PinoLogger
   ) {}
 
+  constructor(
+    // If InjectPinoLogger is used without argument, it will attempt to deduce context
+    // using INQUIRER injection https://github.com/nestjs/docs.nestjs.com/issues/937
+    @InjectPinoLogger()
+    private readonly logger: PinoLogger
+  ) {}
+
   foo() {
     // PinoLogger has same methods as pino instance
     this.logger.trace({ foo: 'bar' }, 'baz %s', 'qux');
