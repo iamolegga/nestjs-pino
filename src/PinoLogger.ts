@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 import { Injectable, Inject, Scope } from '@nestjs/common';
 import pino from 'pino';
+
 import { Params, isPassedLogger, PARAMS_PROVIDER_TOKEN } from './params';
 import { storage } from './storage';
 
@@ -30,6 +32,7 @@ let outOfContext: pino.Logger | undefined;
 
 export function __resetOutOfContextForTests() {
   outOfContext = undefined;
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore reset root for tests only
   PinoLogger.root = undefined;
 }
@@ -66,6 +69,12 @@ export class PinoLogger implements PinoMethods {
     }
 
     this.contextName = renameContext || 'context';
+  }
+
+  get logger(): pino.Logger {
+    // outOfContext is always set in runtime before starts using
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return storage.getStore()?.logger || outOfContext!;
   }
 
   trace(msg: string, ...args: any[]): void;
@@ -108,6 +117,16 @@ export class PinoLogger implements PinoMethods {
     this.context = value;
   }
 
+  assign(fields: pino.Bindings) {
+    const store = storage.getStore();
+    if (!store) {
+      throw new Error(
+        `${PinoLogger.name}: unable to assign extra fields out of request scope`,
+      );
+    }
+    store.logger = store.logger.child(fields);
+  }
+
   protected call(method: pino.Level, ...args: Parameters<LoggerFn>) {
     if (this.context) {
       if (isFirstArgObject(args)) {
@@ -130,24 +149,9 @@ export class PinoLogger implements PinoMethods {
         args = [{ [this.contextName]: this.context }, ...args];
       }
     }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore args are union of tuple types
     this.logger[method](...args);
-  }
-
-  public get logger(): pino.Logger {
-    // outOfContext is always set in runtime before starts using
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return storage.getStore()?.logger || outOfContext!;
-  }
-
-  public assign(fields: pino.Bindings) {
-    const store = storage.getStore();
-    if (!store) {
-      throw new Error(
-        `${PinoLogger.name}: unable to assign extra fields out of request scope`,
-      );
-    }
-    store.logger = store.logger.child(fields);
   }
 }
 

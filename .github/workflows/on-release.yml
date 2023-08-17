@@ -1,0 +1,10 @@
+name: on-release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish-with-git-tag-version:
+    uses: ./.github/workflows/publish-with-git-tag-version.yml
+    secrets: inherit

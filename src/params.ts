@@ -1,9 +1,10 @@
-import { Options } from 'pino-http';
-import { Logger, DestinationStream } from 'pino';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   MiddlewareConfigProxy,
   ModuleMetadata,
 } from '@nestjs/common/interfaces';
+import { Logger, DestinationStream } from 'pino';
+import { Options } from 'pino-http';
 
 export type PassedLogger = { logger: Logger };
 
@@ -55,6 +56,10 @@ export interface Params {
   renameContext?: string;
 }
 
+// for support of nestjs@8 we don't use
+//   extends Pick<FactoryProvider, 'provide' | 'useFactory'>
+// as it's `useFactory` return type in v8 is `T` instead of `T | Promise<T>` as
+// in feature versions, so it's not compatible
 export interface LoggerModuleAsyncParams
   extends Pick<ModuleMetadata, 'imports' | 'providers'> {
   useFactory: (...args: any[]) => Params | Promise<Params>;

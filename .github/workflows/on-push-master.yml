@@ -1,0 +1,24 @@
+name: on-push
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-lint-test:
+    uses: ./.github/workflows/build-lint-test.yml
+    secrets: inherit
+
+  publish-alpha:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'mergify[bot]'
+    needs:
+      - build-lint-test
+    uses: ./.github/workflows/publish-alpha.yml
+    secrets: inherit
+
+  coverage:
+    needs:
+      - build-lint-test
+    uses: ./.github/workflows/publish-coverage.yml
+    secrets: inherit

@@ -16,15 +16,22 @@
   <a href="https://www.npmjs.com/package/nestjs-pino">
     <img alt="npm" src="https://img.shields.io/npm/v/nestjs-pino" />
   </a>
-  <img alt="GitHub branch checks state" src="https://badgen.net/github/checks/iamolegga/nestjs-pino">
+  <a href="https://www.npmjs.com/package/nestjs-pino">
+    <img alt="npm" src="https://img.shields.io/npm/dm/nestjs-pino" />
+  </a>
+  <a href="https://github.com/iamolegga/nestjs-pino/actions">
+    <img alt="GitHub branch checks state" src="https://badgen.net/github/checks/iamolegga/nestjs-pino">
+  </a>
   <a href="https://codeclimate.com/github/iamolegga/nestjs-pino/test_coverage">
     <img src="https://api.codeclimate.com/v1/badges/2821150bb93506cb66fc/test_coverage" />
   </a>
   <a href="https://snyk.io/test/github/iamolegga/nestjs-pino">
-    <img alt="Snyk Vulnerabilities for npm package" src="https://img.shields.io/snyk/vulnerabilities/npm/nestjs-pino" />
+    <img alt="Known Vulnerabilities" src="https://snyk.io/test/github/iamolegga/nestjs-pino/badge.svg" />
   </a>
-  <img alt="Libraries.io" src="https://img.shields.io/librariesio/release/npm/nestjs-pino">
-  <img alt="Dependabot" src="https://badgen.net/dependabot/iamolegga/nestjs-pino/?icon=dependabot">
+  <a href="https://libraries.io/npm/nestjs-pino">
+    <img alt="Libraries.io" src="https://img.shields.io/librariesio/release/npm/nestjs-pino">
+  </a>
+  <img alt="Dependabot" src="https://badgen.net/github/dependabot/iamolegga/nestjs-pino">
   <img alt="Supported platforms: Express & Fastify" src="https://img.shields.io/badge/platforms-Express%20%26%20Fastify-green" />
 </p>
 

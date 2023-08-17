@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+
 import { LoggerErrorInterceptor } from '../src';
+
 import { platforms } from './utils/platforms';
 import { TestCase } from './utils/test-case';
 

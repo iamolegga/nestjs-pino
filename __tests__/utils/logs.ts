@@ -4,10 +4,10 @@ const responseMsg = 'request completed';
 export type LogObject = {
   msg: string;
   req?: { id: number };
-  res?: Record<string, any>;
+  res?: Record<string, unknown>;
   context?: string;
   err?: { message: string; stack: string; type: string };
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export class LogsContainer {
@@ -25,19 +25,19 @@ export class LogsContainer {
       .map((v) => JSON.parse(v));
   }
 
-  getStartLog(): LogObject | undefined {
-    return this.logs.find((log) => log.msg.startsWith(startMsg));
-  }
-
-  getResponseLog(): LogObject | undefined {
-    return this.logs.find((log) => log.msg === responseMsg);
-  }
-
   get some() {
     return this.logs.some.bind(this.logs);
   }
 
   get find() {
     return this.logs.find.bind(this.logs);
+  }
+
+  getStartLog(): LogObject | undefined {
+    return this.logs.find((log) => log.msg.startsWith(startMsg));
+  }
+
+  getResponseLog(): LogObject | undefined {
+    return this.logs.find((log) => log.msg === responseMsg);
   }
 }

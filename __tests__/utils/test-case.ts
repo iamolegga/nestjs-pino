@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { AbstractHttpAdapter, NestFactory } from '@nestjs/core';
 import { Module, ModuleMetadata, Type } from '@nestjs/common';
+import { AbstractHttpAdapter, NestFactory } from '@nestjs/core';
 import MemoryStream = require('memorystream');
-import * as request from 'supertest';
-import { Options } from 'pino-http';
 import pino from 'pino';
+import { Options } from 'pino-http';
+import * as request from 'supertest';
+
 import {
   Logger,
   LoggerModule,
@@ -12,18 +13,19 @@ import {
   Params,
 } from '../../src';
 import { __resetOutOfContextForTests as __resetSingletons } from '../../src/PinoLogger';
+
+import { getFreePort } from './get-free-port';
 import { LogsContainer } from './logs';
 
 export class TestCase {
-  private module?: Type<any>;
+  private module?: Type<unknown>;
   private stream: pino.DestinationStream;
   private expectedCode = 200;
 
   constructor(
-    private readonly adapter: AbstractHttpAdapter<any, any, any>,
+    private readonly adapter: AbstractHttpAdapter<unknown, unknown, unknown>,
     private readonly moduleMetadata: ModuleMetadata,
   ) {
-    // @ts-ignore bad typings
     this.stream = new MemoryStream('', { readable: false });
   }
 
@@ -53,7 +55,7 @@ export class TestCase {
   ): this {
     if (!skipStreamInjection) {
       const useFactoryOld = asyncParams.useFactory;
-      asyncParams.useFactory = (...args: any[]) => {
+      asyncParams.useFactory = (...args: unknown[]) => {
         const params = useFactoryOld(...args);
         if ('then' in params) {
           return params.then((p) => this.injectStream(p));
@@ -93,7 +95,7 @@ export class TestCase {
     });
     app.useLogger(app.get(Logger));
 
-    const server = await app.listen(3000);
+    const server = await app.listen(await getFreePort(), '0.0.0.0');
     for (const path of paths) {
       await request(server).get(path).expect(this.expectedCode);
     }

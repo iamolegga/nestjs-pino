@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+
 import { getLoggerToken, InjectPinoLogger, PinoLogger } from '../src';
 
 describe('get-logger-token', () => {

@@ -1,8 +1,10 @@
 import { Module, Controller, Get, Injectable, Logger } from '@nestjs/common';
 import MemoryStream = require('memorystream');
-import { LoggerModule } from '../src';
-import { platforms } from './utils/platforms';
+
+import { LoggerModule, Params } from '../src';
+
 import { LogsContainer } from './utils/logs';
+import { platforms } from './utils/platforms';
 import { TestCase } from './utils/test-case';
 
 describe('module initialization', () => {
@@ -52,7 +54,6 @@ describe('module initialization', () => {
         });
 
         it('should work properly with array as value of `httpPino` property', async () => {
-          // @ts-ignore bad types
           const stream = new MemoryStream('', { readable: false });
           const msg = Math.random().toString();
 
@@ -118,7 +119,6 @@ describe('module initialization', () => {
         });
 
         it('should work properly when useFactory returns array as value of `httpPino` property', async () => {
-          // @ts-ignore bad types
           const stream = new MemoryStream('', { readable: false });
           const msg = Math.random().toString();
 
@@ -212,7 +212,7 @@ describe('module initialization', () => {
             controllers: [TestController],
           })
             .forRootAsync({
-              useFactory: async () => {
+              useFactory: async (): Promise<Params> => {
                 return { pinoHttp: { level: 'info' } };
               },
             })
