@@ -1,16 +1,19 @@
 queue_rules:
-  - name: dependabot
+  - name: dependabot-nestjs-pino
     conditions:
       - author~=^dependabot(|-preview)\[bot\]$
-      - status-success=build-lint-test-publish
-      - status-success=security/snyk (iamolegga)
+      - -check-failure~=build-lint-test
+      - check-success~=build-lint-test
+      - check-success=security/snyk (iamolegga)
 
 pull_request_rules:
 - name: merge pull requests from dependabot if CI passes
   conditions:
     - author~=^dependabot(|-preview)\[bot\]$
-    - status-success=build-lint-test-publish
-    - status-success=security/snyk (iamolegga)
+    - -check-failure~=build-lint-test
+    - check-success~=build-lint-test
+    - check-success=security/snyk (iamolegga)
   actions:
     queue:
-      name: dependabot
+      name: dependabot-nestjs-pino
+      method: rebase

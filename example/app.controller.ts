@@ -1,6 +1,8 @@
-import { Controller, Get, Logger } from "@nestjs/common";
-import { MyService } from "./my.service";
-import { InjectPinoLogger, PinoLogger } from "../src";
+import { Controller, Get, Logger } from '@nestjs/common';
+
+import { InjectPinoLogger, PinoLogger } from '../src';
+
+import { MyService } from './my.service';
 
 @Controller()
 export class AppController {
@@ -13,7 +15,8 @@ export class AppController {
     // ... logger that implements `pino` (trace,debug,info,warn,error,fatal).
     // For the last one you can choose which of this two injection methods do
     // you like more:
-    @InjectPinoLogger(AppController.name) private readonly pinoLogger1: PinoLogger,
+    @InjectPinoLogger(AppController.name)
+    private readonly pinoLogger1: PinoLogger,
     private readonly pinoLogger2: PinoLogger,
   ) {
     pinoLogger2.setContext(AppController.name);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Global,
   Module,
@@ -10,6 +11,8 @@ import {
 import { Provider } from '@nestjs/common/interfaces';
 import * as express from 'express';
 import { pinoHttp } from 'pino-http';
+
+import { createProvidersForDecorated } from './InjectPinoLogger';
 import { Logger } from './Logger';
 import {
   Params,
@@ -17,7 +20,6 @@ import {
   PARAMS_PROVIDER_TOKEN,
 } from './params';
 import { PinoLogger } from './PinoLogger';
-import { createProvidersForDecorated } from './InjectPinoLogger';
 import { Store, storage } from './storage';
 
 const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
@@ -118,9 +120,10 @@ function bindLoggerMiddlewareFactory(useExisting: boolean) {
     let log = req.log;
 
     if (!useExisting && req.allLogs) {
-      log = req.allLogs[req.allLogs.length - 1];
+      log = req.allLogs[req.allLogs.length - 1]!;
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore: run requires arguments for next but should not because it can
     // be called without arguments
     storage.run(new Store(log), next);

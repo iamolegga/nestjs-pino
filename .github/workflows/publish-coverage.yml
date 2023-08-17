@@ -1,0 +1,25 @@
+name: publish-coverage
+
+on:
+  workflow_call:
+
+jobs:
+  publish-coverage:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/cache@v3
+        with:
+          path: coverage
+          # restore cache from build-lint-test wf with key=sha-(oneof nestjs version)-(oneof nodejs version)
+          key: ${{ github.sha }}-10-20
+
+      - uses: paambaati/codeclimate-action@v2.7.5
+        with:
+          coverageLocations: ${{github.workspace}}/coverage/lcov.info:lcov
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CODE_CLIMATE_REPORTER_ID }}

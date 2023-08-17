@@ -1,5 +1,7 @@
 import { Controller, Get, Logger } from '@nestjs/common';
+
 import { PinoLogger, InjectPinoLogger } from '../src';
+
 import { platforms } from './utils/platforms';
 import { TestCase } from './utils/test-case';
 

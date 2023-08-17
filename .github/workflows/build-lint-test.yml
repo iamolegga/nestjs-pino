@@ -1,0 +1,53 @@
+name: build-lint-test
+
+on:
+  workflow_call:
+
+jobs:
+  build-lint-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        nestjs-version:
+          - "8"
+          - "9"
+          - "10"
+        nodejs-version:
+          - 16
+          - 18
+          - 20
+        include:
+          - nestjs-version: 8
+            typescript-version: 4
+          - nestjs-version: 9
+            typescript-version: 4
+          - nestjs-version: 10
+            typescript-version: 5
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.nodejs-version }}
+      - run: npm ci
+      - run: |
+          npm i @nestjs/core@${{ matrix.nestjs-version }} \
+                @nestjs/common@${{ matrix.nestjs-version }} \
+                @nestjs/platform-express@${{ matrix.nestjs-version }} \
+                @nestjs/platform-fastify@${{ matrix.nestjs-version }} \
+                @nestjs/testing@${{ matrix.nestjs-version }} \
+                @types/node@${{ matrix.nodejs-version }} \
+                typescript@${{ matrix.typescript-version }} \
+                -D
+      - run: npm run lint
+      - uses: actions/cache@v3
+        with:
+          path: coverage
+          key: ${{ github.sha }}-${{ matrix.nestjs-version }}-${{ matrix.nodejs-version }}
+      - run: npm t
+      - run: npm run build

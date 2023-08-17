@@ -5,17 +5,17 @@ import {
   OnModuleInit,
   Logger,
 } from '@nestjs/common';
+import { FastifyAdapter } from '@nestjs/platform-fastify';
 import MemoryStream = require('memorystream');
 import pino from 'pino';
-import { FastifyAdapter } from '@nestjs/platform-fastify';
-import { TestCase } from './utils/test-case';
+
 import { LogsContainer } from './utils/logs';
 import { platforms } from './utils/platforms';
+import { TestCase } from './utils/test-case';
 
 describe('useExisting property', () => {
   describe(FastifyAdapter.name, () => {
     it('should use adapter logger in req context and default beyond', async () => {
-      // @ts-ignore bad types
       const stream = new MemoryStream('', { readable: false });
       const inReqContextMsg = Math.random().toString();
       const outReqContextMsg = Math.random().toString();
@@ -65,7 +65,6 @@ describe('pass existing pino instance', () => {
   for (const PlatformAdapter of platforms) {
     describe(PlatformAdapter.name, () => {
       it('should use passed instance out of context', async () => {
-        // @ts-ignore bad types
         const stream = new MemoryStream('', { readable: false });
         const msg = Math.random().toString();
 

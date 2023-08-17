@@ -1,0 +1,27 @@
+name: publish-alpha
+
+on:
+  workflow_call:
+
+jobs:
+  publish-alpha:
+    if: github.ref == 'refs/heads/master' && github.actor != 'dependabot[bot]' && github.actor != 'mergify[bot]'
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - run: npm version --no-git-tag-version $(git describe --abbrev=0 --tags)-alpha.$(git rev-parse --short=6 ${{ github.sha }}) || true
+
+      - run: npm publish --tag alpha || true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
