@@ -36,6 +36,10 @@ export class Logger implements LoggerService {
     this.call('error', message, ...optionalParams);
   }
 
+  fatal(message: any, ...optionalParams: any[]) {
+    this.call('fatal', message, ...optionalParams);
+  }
+
   private call(level: Level, message: any, ...optionalParams: any[]) {
     const objArg: Record<string, any> = {};
 
