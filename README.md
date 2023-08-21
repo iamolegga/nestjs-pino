@@ -569,13 +569,13 @@ In NestJS <= 7 and `nestjs-pino@1` when you call `this.logger.log('foo', 'bar');
 **A**: Pino built-in methods names are not fully compatible with NestJS built-in `LoggerService` methods names, and there is an option which logger you use. Here is methods mapping:
 
 | `pino` method | `PinoLogger` method | NestJS built-in `Logger` method |
-| ------------- | ------------------- | --------------- |
-| **trace**     | **trace**           | **verbose**     |
-| debug         | debug               | debug           |
-| **info**      | **info**            | **log**         |
-| warn          | warn                | warn            |
-| error         | error               | error           |
-| **fatal**     | **fatal**           | -               |
+| ------------- | ------------------- | --------------------------------|
+| **trace**     | **trace**           | **verbose**                     |
+| debug         | debug               | debug                           |
+| **info**      | **info**            | **log**                         |
+| warn          | warn                | warn                            |
+| error         | error               | error                           |
+| fatal         | fatal               | fatal (since nestjs@10.2)       |
 
 ---
 

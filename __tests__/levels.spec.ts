@@ -1,4 +1,10 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Logger,
+  ConsoleLogger,
+  LogLevel,
+} from '@nestjs/common';
 import pino from 'pino';
 
 import { PinoLogger } from '../src';
@@ -6,13 +12,17 @@ import { PinoLogger } from '../src';
 import { platforms } from './utils/platforms';
 import { TestCase } from './utils/test-case';
 
-const loggerMethods: [Exclude<keyof Logger, 'localInstance'>, pino.Level][] = [
+const loggerMethods: [LogLevel, pino.Level][] = [
   ['verbose', 'trace'],
   ['debug', 'debug'],
   ['log', 'info'],
   ['warn', 'warn'],
   ['error', 'error'],
 ];
+
+// the only way to make it work across different versions of nestjs
+if (ConsoleLogger.prototype.hasOwnProperty('fatal'))
+  loggerMethods.push([<LogLevel>'fatal', 'fatal']);
 
 const pinoLoggerMethods: pino.Level[] = loggerMethods
   .map((p) => p[1])
