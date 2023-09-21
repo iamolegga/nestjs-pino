@@ -175,6 +175,76 @@ describe('error logging', () => {
         });
       });
 
+      describe('setting custom attribute keys', () => {
+        it('setting the `err` custom attribute key', async () => {
+          const ctx = Math.random().toString();
+          const message = 'custom `err` attribute key';
+
+          @Controller('/')
+          class TestController {
+            constructor(private readonly logger: PinoLogger) {
+              this.logger.setContext(ctx);
+            }
+
+            @Get()
+            get() {
+              this.logger.info(new Error(message), 'baz');
+              return {};
+            }
+          }
+
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot({ pinoHttp: { customAttributeKeys: { err: 'error' } } })
+            .run();
+          expect(
+            logs.some(
+              (v) =>
+                v.req &&
+                v.context === ctx &&
+                !v.err &&
+                v.error &&
+                (v.error as { message: string }).message === message,
+            ),
+          ).toBeTruthy();
+        });
+
+        it('setting the `req` custom attribute key', async () => {
+          const ctx = Math.random().toString();
+          const message = 'custom `req` attribute key';
+
+          @Controller('/')
+          class TestController {
+            constructor(private readonly logger: PinoLogger) {
+              this.logger.setContext(ctx);
+            }
+
+            @Get()
+            get() {
+              this.logger.info(new Error(message), 'baz');
+              return {};
+            }
+          }
+
+          const logs = await new TestCase(new PlatformAdapter(), {
+            controllers: [TestController],
+          })
+            .forRoot({ pinoHttp: { customAttributeKeys: { req: 'request' } } })
+            .run();
+          expect(
+            logs.some(
+              (v) =>
+                !v.req &&
+                v.request &&
+                v.context === ctx &&
+                v.err &&
+                v.err.message === message,
+            ),
+          ).toBeTruthy();
+        });
+      });
+
       describe('keeps stack of thrown error', () => {
         it('built-in error handler logs with correct stack', async () => {
           const msg = Math.random().toString();

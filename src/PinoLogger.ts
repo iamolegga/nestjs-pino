@@ -48,10 +48,19 @@ export class PinoLogger implements PinoMethods {
 
   protected context = '';
   protected readonly contextName: string;
+  protected readonly errorKey: string = 'err';
 
   constructor(
     @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
   ) {
+    if (
+      typeof pinoHttp === 'object' &&
+      'customAttributeKeys' in pinoHttp &&
+      typeof pinoHttp.customAttributeKeys !== 'undefined'
+    ) {
+      this.errorKey = pinoHttp.customAttributeKeys.err ?? 'err';
+    }
+
     if (!outOfContext) {
       if (Array.isArray(pinoHttp)) {
         outOfContext = pino(...pinoHttp);
@@ -135,7 +144,7 @@ export class PinoLogger implements PinoMethods {
           args = [
             Object.assign(
               { [this.contextName]: this.context },
-              { err: firstArg },
+              { [this.errorKey]: firstArg },
             ),
             ...args.slice(1),
           ];
