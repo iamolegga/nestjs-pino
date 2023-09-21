@@ -1,6 +1,6 @@
 {
   "name": "nestjs-pino",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "description": "Pino logger for NestJS",
   "main": "index.js",
   "types": "index.d.ts",
