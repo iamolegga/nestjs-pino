@@ -13,7 +13,6 @@ jobs:
           - "9"
           - "10"
         nodejs-version:
-          - 16
           - 18
           - 20
         include:
