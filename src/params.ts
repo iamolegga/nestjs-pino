@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { IncomingMessage, ServerResponse } from 'http';
-
 import {
   MiddlewareConfigProxy,
   ModuleMetadata,
@@ -10,19 +8,12 @@ import { Options } from 'pino-http';
 
 export type PassedLogger = { logger: Logger };
 
-export interface Params<
-  IM = IncomingMessage,
-  SR = ServerResponse,
-  CustomLevels extends string = never,
-> {
+export interface Params {
   /**
    * Optional parameters for `pino-http` module
    * @see https://github.com/pinojs/pino-http#pinohttpopts-stream
    */
-  pinoHttp?:
-    | Options<IM, SR, CustomLevels>
-    | DestinationStream
-    | [Options, DestinationStream];
+  pinoHttp?: Options | DestinationStream | [Options, DestinationStream];
 
   /**
    * Optional parameter for routing. It should implement interface of
