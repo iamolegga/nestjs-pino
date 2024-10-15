@@ -9,12 +9,18 @@ jobs:
       fail-fast: false
       matrix:
         nestjs-version:
-          - "8"
-          - "9"
-          - "10"
+          - '8'
+          - '9'
+          - '10'
         nodejs-version:
           - 18
           - 20
+        pino-http-version:
+          - '6.4'
+          - '7'
+          - '8'
+          - '9'
+          - '10'
         include:
           - nestjs-version: 8
             typescript-version: 4
@@ -42,11 +48,12 @@ jobs:
                 @nestjs/testing@${{ matrix.nestjs-version }} \
                 @types/node@${{ matrix.nodejs-version }} \
                 typescript@${{ matrix.typescript-version }} \
+                pino-http@${{ matrix.pino-http-version }}
                 -D
       - run: npm run lint
       - uses: actions/cache@v3
         with:
           path: coverage
-          key: ${{ github.sha }}-${{ matrix.nestjs-version }}-${{ matrix.nodejs-version }}
+          key: ${{ github.sha }}-${{ matrix.nestjs-version }}-${{ matrix.nodejs-version }}-${{ matrix.pino-http-version }}
       - run: npm t
       - run: npm run build
