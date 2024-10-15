@@ -48,7 +48,7 @@ jobs:
                 @nestjs/testing@${{ matrix.nestjs-version }} \
                 @types/node@${{ matrix.nodejs-version }} \
                 typescript@${{ matrix.typescript-version }} \
-                pino-http@${{ matrix.pino-http-version }}
+                pino-http@${{ matrix.pino-http-version }} \
                 -D
       - run: npm run lint
       - uses: actions/cache@v3
