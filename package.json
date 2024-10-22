@@ -51,7 +51,7 @@
     "@types/memorystream": "^0.3.1",
     "@types/node": "^22.0.0",
     "@types/supertest": "^6.0.2",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^6.4.0",
     "eslint": "^8.47.0",
     "eslint-config-prettier": "^9.0.0",
