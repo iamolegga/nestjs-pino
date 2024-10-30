@@ -10,7 +10,7 @@
     "prebuild": "rimraf dist",
     "build": "tsc -p tsconfig.build.json",
     "example": "rimraf dist && tsc && LOG_LEVEL=debug node dist/example/main",
-    "prepublishOnly": "npm run build && cp -r ./dist/* .",
+    "prepare": "npm run build && cp -r ./dist/* .",
     "postpublish": "git clean -fd",
     "postinstall": "node postinstall.js"
   },
