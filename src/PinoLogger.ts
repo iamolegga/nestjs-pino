@@ -134,6 +134,7 @@ export class PinoLogger implements PinoMethods {
       );
     }
     store.logger = store.logger.child(fields);
+    store.responseLogger?.setBindings(fields);
   }
 
   protected call(method: pino.Level, ...args: Parameters<LoggerFn>) {

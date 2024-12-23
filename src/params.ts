@@ -54,6 +54,13 @@ export interface Params {
    * {"level":30, ... "RENAME_CONTEXT_VALUE_HERE":"AppController" }
    */
   renameContext?: string;
+
+  /**
+   * Optional parameter to also assign the response logger during calls to
+   * `PinoLogger.assign`. By default, `assign` does not impact response logs
+   * (e.g.`Request completed`).
+   */
+  assignResponse?: boolean;
 }
 
 // for support of nestjs@8 we don't use

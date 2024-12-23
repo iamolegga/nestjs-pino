@@ -437,7 +437,7 @@ class MyService {
 }
 ```
 
-Due to the [limitation](https://github.com/pinojs/pino-http/issues/30) of the underlying `pino-http` `PinoLogger.assign` cannot extend `Request completed` logs.
+By default, this does not extend `Request completed` logs. Set the `assignResponse` parameter to `true` to also enrich response logs automatically emitted by `pino-http`.
 
 ## Change pino params at runtime
 
