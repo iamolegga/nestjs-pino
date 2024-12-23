@@ -75,9 +75,14 @@ export class LoggerModule implements NestModule {
       forRoutes = DEFAULT_ROUTES,
       pinoHttp,
       useExisting,
+      assignResponse,
     } = this.params;
 
-    const middlewares = createLoggerMiddlewares(pinoHttp || {}, useExisting);
+    const middlewares = createLoggerMiddlewares(
+      pinoHttp || {},
+      useExisting,
+      assignResponse,
+    );
 
     if (exclude) {
       consumer
@@ -93,9 +98,10 @@ export class LoggerModule implements NestModule {
 function createLoggerMiddlewares(
   params: NonNullable<Params['pinoHttp']>,
   useExisting = false,
+  assignResponse = false,
 ) {
   if (useExisting) {
-    return [bindLoggerMiddlewareFactory(useExisting)];
+    return [bindLoggerMiddlewareFactory(useExisting, assignResponse)];
   }
 
   const middleware = pinoHttp(
@@ -108,24 +114,31 @@ function createLoggerMiddlewares(
 
   // FIXME: params type here is pinoHttp.Options | pino.DestinationStream
   // pinoHttp has two overloads, each of them takes those types
-  return [middleware, bindLoggerMiddlewareFactory(useExisting)];
+  return [middleware, bindLoggerMiddlewareFactory(useExisting, assignResponse)];
 }
 
-function bindLoggerMiddlewareFactory(useExisting: boolean) {
+function bindLoggerMiddlewareFactory(
+  useExisting: boolean,
+  assignResponse: boolean,
+) {
   return function bindLoggerMiddleware(
     req: express.Request,
-    _res: express.Response,
+    res: express.Response,
     next: express.NextFunction,
   ) {
     let log = req.log;
+    let resLog = assignResponse ? res.log : undefined;
 
     if (!useExisting && req.allLogs) {
       log = req.allLogs[req.allLogs.length - 1]!;
+    }
+    if (assignResponse && !useExisting && res.allLogs) {
+      resLog = res.allLogs[res.allLogs.length - 1]!;
     }
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore: run requires arguments for next but should not because it can
     // be called without arguments
-    storage.run(new Store(log), next);
+    storage.run(new Store(log, resLog), next);
   };
 }
