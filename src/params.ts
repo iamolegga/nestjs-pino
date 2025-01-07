@@ -56,6 +56,16 @@ export interface Params {
   renameContext?: string;
 
   /**
+   * This is an array of contexts that will be filtered out of the logs.
+   * This is specifically useful for filtering out nestjs internal contexts such
+   * as the logs nest spits out on startup.
+   *
+   * Example:
+   * filteredContexts: ['RouterExplorer', 'RoutesResolver', 'InstanceLoader']
+   */
+  filteredContexts?: string[];
+
+  /**
    * Optional parameter to also assign the response logger during calls to
    * `PinoLogger.assign`. By default, `assign` does not impact response logs
    * (e.g.`Request completed`).

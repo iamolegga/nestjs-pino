@@ -8,12 +8,14 @@ import { PinoLogger } from './PinoLogger';
 @Injectable()
 export class Logger implements LoggerService {
   private readonly contextName: string;
+  private readonly filteredContexts: string[];
 
   constructor(
     protected readonly logger: PinoLogger,
-    @Inject(PARAMS_PROVIDER_TOKEN) { renameContext }: Params,
+    @Inject(PARAMS_PROVIDER_TOKEN) { renameContext, filteredContexts }: Params,
   ) {
     this.contextName = renameContext || 'context';
+    this.filteredContexts = filteredContexts || [];
   }
 
   verbose(message: any, ...optionalParams: any[]) {
@@ -48,6 +50,11 @@ export class Logger implements LoggerService {
     let params: any[] = [];
     if (optionalParams.length !== 0) {
       objArg[this.contextName] = optionalParams[optionalParams.length - 1];
+      if (
+        this.filteredContexts &&
+        this.filteredContexts.includes(objArg[this.contextName])
+      )
+        return;
       params = optionalParams.slice(0, -1);
     }
 
