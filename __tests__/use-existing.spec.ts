@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import MemoryStream = require('memorystream');
 import pino from 'pino';
 
@@ -42,7 +43,7 @@ describe('useExisting property', () => {
         }
       }
 
-      await new TestCase(new FastifyAdapter({ logger: pino(stream) }), {
+      await new TestCase(new FastifyAdapter({ logger: { stream } }), {
         controllers: [TestController],
         providers: [TestService],
       })

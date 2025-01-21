@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-types */
 import { Injectable, Inject, Scope } from '@nestjs/common';
 import pino from 'pino';
 
@@ -82,7 +81,7 @@ export class PinoLogger implements PinoMethods {
 
   get logger(): pino.Logger {
     // outOfContext is always set in runtime before starts using
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     return storage.getStore()?.logger || outOfContext!;
   }
 

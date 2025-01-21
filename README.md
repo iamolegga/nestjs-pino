@@ -1,13 +1,14 @@
 <p align="center">
-  <img alt="War in Ukraine" src="https://raw.githubusercontent.com/iamolegga/nestjs-pino/master/war.jpg"/>
+  <img alt="Bombed Vovchansk, Ukraine" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Vovchansk_%282024-06-02%29_1513.jpg/640px-Vovchansk_%282024-06-02%29_1513.jpg"/>
+  <br />
+  <small>"Vovchansk (2024-06-02) 1513" by National Police of Ukraine (Liut Brigade) is licensed under CC BY 4.0.</small>
+</p>
+<p align="center">
+  This is Vovchansk, Ukraine, the city where the father of this library’s author was born. This is how it looks now, after the Russian invasion. If you find this library useful and would like to thank the author, please consider donating any amount via one of the following links:
   <br/>
-  Children wait in a bomb shelter in Mariupol, Ukraine. AP
+  ・<a href="https://war.ukraine.ua/donate/">Armed Forces of Ukraine</a>・<a href="https://savelife.in.ua/en/">"The Come Back Alive" foundation</a>・
   <br/>
-  Help save their lives by donating:
-  <br/>
-  ・<a href="https://war.ukraine.ua/donate/">Armed Forces of Ukraine</a>・<a href="https://www.comebackalive.in.ua/">Ukrainian volunteers</a>・
-  <br/>
-  Thanks for your support!
+  Thanks for your support! 🇺🇦
 </p>
 
 <h1 align="center">NestJS-Pino</h1>

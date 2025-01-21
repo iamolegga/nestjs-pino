@@ -12,15 +12,18 @@ jobs:
           - "8"
           - "9"
           - "10"
+          - "11"
         nodejs-version:
-          - 18
           - 20
+          - 22
         include:
           - nestjs-version: 8
             typescript-version: 4
           - nestjs-version: 9
             typescript-version: 4
           - nestjs-version: 10
+            typescript-version: 5
+          - nestjs-version: 11
             typescript-version: 5
 
     runs-on: ubuntu-latest

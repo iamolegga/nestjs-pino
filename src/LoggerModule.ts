@@ -22,6 +22,11 @@ import {
 import { PinoLogger } from './PinoLogger';
 import { Store, storage } from './storage';
 
+/**
+ * As NestJS@11 still supports express@4 `*`-style routing by itself let's keep
+ * it for the backward compatibility. On the next major NestJS release `*` we
+ * can replace it with `/{*splat}`, and drop the support for NestJS@9 and below.
+ */
 const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
 
 @Global()

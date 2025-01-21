@@ -1,38 +1,38 @@
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    project: 'tsconfig.json',
-    sourceType: 'module',
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "tsconfig.json",
+    "sourceType": "module"
   },
-  plugins: ['@typescript-eslint/eslint-plugin'],
-  extends: [
-    'plugin:@typescript-eslint/recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
-    'plugin:prettier/recommended',
+  "plugins": ["@typescript-eslint/eslint-plugin"],
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/recommended",
+    "plugin:import/typescript",
+    "plugin:prettier/recommended"
   ],
-  root: true,
-  env: {
-    node: true,
-    jest: true,
+  "root": true,
+  "env": {
+    "node": true,
+    "jest": true
   },
-  ignorePatterns: ['.eslintrc.js'],
-  rules: {
-    '@typescript-eslint/no-explicit-any': [
-      'error',
-      { fixToUnknown: true, ignoreRestArgs: false },
+  "ignorePatterns": [".eslintrc.js"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": [
+      "error",
+      { "fixToUnknown": true, "ignoreRestArgs": false }
     ],
-    '@typescript-eslint/no-floating-promises': ['error', { ignoreIIFE: true }],
-    '@typescript-eslint/no-unused-vars': [
-      'error',
-      { varsIgnorePattern: '^_', argsIgnorePattern: '^_', ignoreRestSiblings: true },
+    "@typescript-eslint/no-floating-promises": ["error", { "ignoreIIFE": true }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_", "ignoreRestSiblings": true }
     ],
-    '@typescript-eslint/explicit-member-accessibility': [
-      'error',
-      { accessibility: 'no-public' },
+    "@typescript-eslint/explicit-member-accessibility": [
+      "error",
+      { "accessibility": "no-public" }
     ],
-    '@typescript-eslint/member-ordering': ['error', {
-      default: [
+    "@typescript-eslint/member-ordering": ["error", {
+      "default": [
         "public-static-field",
         "public-static-get",
         "public-static-set",
@@ -85,15 +85,15 @@ module.exports = {
         "private-decorated-set",
         "private-instance-set",
         "private-decorated-method",
-        "private-instance-method",
+        "private-instance-method"
       ]
     }],
-    'import/order': [
-      'error',
+    "import/order": [
+      "error",
       {
-        alphabetize: { order: 'asc', caseInsensitive: true },
-        'newlines-between': 'always',
-      },
+        "alphabetize": { "order": "asc", "caseInsensitive": true },
+        "newlines-between": "always"
+      }
     ]
-  },
-};
+  }
+}
