@@ -1,4 +1,5 @@
 import { Module, Controller, Get, Injectable, Logger } from '@nestjs/common';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import MemoryStream = require('memorystream');
 
 import { LoggerModule, Params } from '../src';

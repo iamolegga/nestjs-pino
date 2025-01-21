@@ -16,7 +16,7 @@ jobs:
         with:
           path: coverage
           # restore cache from build-lint-test wf with key=sha-(oneof nestjs version)-(oneof nodejs version)
-          key: ${{ github.sha }}-10-20
+          key: ${{ github.sha }}-11-22
 
       - uses: paambaati/codeclimate-action@v2.7.5
         with:
