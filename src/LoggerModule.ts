@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { IncomingMessage, ServerResponse } from 'node:http';
+
 import {
   Global,
   Module,
@@ -9,7 +11,6 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Provider } from '@nestjs/common/interfaces';
-import * as express from 'express';
 import { pinoHttp } from 'pino-http';
 
 import { createProvidersForDecorated } from './InjectPinoLogger';
@@ -127,9 +128,9 @@ function bindLoggerMiddlewareFactory(
   assignResponse: boolean,
 ) {
   return function bindLoggerMiddleware(
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
+    req: IncomingMessage,
+    res: ServerResponse,
+    next: () => void,
   ) {
     let log = req.log;
     let resLog = assignResponse ? res.log : undefined;
@@ -141,9 +142,6 @@ function bindLoggerMiddlewareFactory(
       resLog = res.allLogs[res.allLogs.length - 1]!;
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore: run requires arguments for next but should not because it can
-    // be called without arguments
     storage.run(new Store(log, resLog), next);
   };
 }
