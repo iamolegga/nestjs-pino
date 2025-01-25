@@ -8,4 +8,4 @@ updates:
   open-pull-requests-limit: 10
   ignore:
     - dependency-name: "reflect-metadata"
-      update-types: ["version-update:semver-major"]
+      update-types: ["version-update:semver-major", "version-update:semver-minor"]
