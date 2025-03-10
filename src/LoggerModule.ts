@@ -23,12 +23,8 @@ import {
 import { PinoLogger } from './PinoLogger';
 import { Store, storage } from './storage';
 
-/**
- * As NestJS@11 still supports express@4 `*`-style routing by itself let's keep
- * it for the backward compatibility. On the next major NestJS release `*` we
- * can replace it with `/{*splat}`, and drop the support for NestJS@9 and below.
- */
-const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
+const DEFAULT_ROUTES = [{ path: '/{*splat}', method: RequestMethod.ALL }];
+const LEGACY_DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
 
 @Global()
 @Module({ providers: [Logger], exports: [Logger] })
@@ -78,7 +74,10 @@ export class LoggerModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     const {
       exclude,
-      forRoutes = DEFAULT_ROUTES,
+      useLegacyWildcardRoute,
+      forRoutes = useLegacyWildcardRoute
+        ? LEGACY_DEFAULT_ROUTES
+        : DEFAULT_ROUTES,
       pinoHttp,
       useExisting,
       assignResponse,

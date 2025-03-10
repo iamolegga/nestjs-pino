@@ -61,6 +61,14 @@ export interface Params {
    * (e.g.`Request completed`).
    */
   assignResponse?: boolean;
+
+  /**
+   * Optional parameter to use legacy express wildcard route handling. If you
+   * are using a version of NestJS that does not support the new wildcard
+   * routes, you can enable this option to use a legacy implementation. This
+   * option is not recommended for new projects.
+   */
+  useLegacyWildcardRoute?: boolean;
 }
 
 // for support of nestjs@8 we don't use
