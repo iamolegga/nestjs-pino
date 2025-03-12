@@ -7,7 +7,7 @@
     "removeComments": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "outDir": "./dist",
     "incremental": true,
     "allowSyntheticDefaultImports": true,
