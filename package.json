@@ -15,7 +15,7 @@
     "postinstall": "node postinstall.js"
   },
   "files": [
-    "*.{js,d.ts}",
+    "*.{js,d.ts,map}",
     "!jest.config.js",
     "!.eslintrc.js"
   ],
