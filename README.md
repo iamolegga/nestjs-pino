@@ -21,10 +21,10 @@
     <img alt="npm" src="https://img.shields.io/npm/dm/nestjs-pino" />
   </a>
   <a href="https://github.com/iamolegga/nestjs-pino/actions">
-    <img alt="GitHub branch checks state" src="https://badgen.net/github/checks/iamolegga/nestjs-pino">
+    <img alt="GitHub branch checks state" src="https://badgen.net/github/checks/iamolegga/nestjs-pino/master">
   </a>
-  <a href="https://codeclimate.com/github/iamolegga/nestjs-pino/test_coverage">
-    <img src="https://api.codeclimate.com/v1/badges/2821150bb93506cb66fc/test_coverage" />
+  <a href="https://qlty.sh/gh/iamolegga/projects/nestjs-pino">
+    <img src="https://qlty.sh/gh/iamolegga/projects/nestjs-pino/coverage.svg" alt="Code Coverage" />
   </a>
   <a href="https://snyk.io/test/github/iamolegga/nestjs-pino">
     <img alt="Known Vulnerabilities" src="https://snyk.io/test/github/iamolegga/nestjs-pino/badge.svg" />
