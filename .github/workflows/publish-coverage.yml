@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6.0.0
         with:
           fetch-depth: 0
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4.3.0
         with:
           path: coverage
           # restore cache from build-lint-test wf with key=sha-(oneof nestjs version)-(oneof nodejs version)

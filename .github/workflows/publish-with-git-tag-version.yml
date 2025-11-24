@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6.0.0
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v6.0.0
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
@@ -26,7 +26,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git commit -m "update version" -a
 
-      - uses: ad-m/github-push-action@master
+      - uses: ad-m/github-push-action@v1.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
