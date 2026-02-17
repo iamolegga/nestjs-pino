@@ -15,6 +15,7 @@ import { pinoHttp } from 'pino-http';
 
 import { createProvidersForDecorated } from './InjectPinoLogger';
 import { Logger } from './Logger';
+import { NativeLogger } from './NativeLogger';
 import {
   Params,
   LoggerModuleAsyncParams,
@@ -31,7 +32,7 @@ import { Store, storage } from './storage';
 const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
 
 @Global()
-@Module({ providers: [Logger], exports: [Logger] })
+@Module({ providers: [Logger, NativeLogger], exports: [Logger, NativeLogger] })
 export class LoggerModule implements NestModule {
   static forRoot(params?: Params | undefined): DynamicModule {
     const paramsProvider: Provider<Params> = {
@@ -43,8 +44,14 @@ export class LoggerModule implements NestModule {
 
     return {
       module: LoggerModule,
-      providers: [Logger, ...decorated, PinoLogger, paramsProvider],
-      exports: [Logger, ...decorated, PinoLogger, paramsProvider],
+      providers: [
+        Logger,
+        NativeLogger,
+        ...decorated,
+        PinoLogger,
+        paramsProvider,
+      ],
+      exports: [Logger, NativeLogger, ...decorated, PinoLogger, paramsProvider],
     };
   }
 
@@ -59,6 +66,7 @@ export class LoggerModule implements NestModule {
 
     const providers: any[] = [
       Logger,
+      NativeLogger,
       ...decorated,
       PinoLogger,
       paramsProvider,
@@ -69,7 +77,7 @@ export class LoggerModule implements NestModule {
       module: LoggerModule,
       imports: params.imports,
       providers,
-      exports: [Logger, ...decorated, PinoLogger, paramsProvider],
+      exports: [Logger, NativeLogger, ...decorated, PinoLogger, paramsProvider],
     };
   }
 

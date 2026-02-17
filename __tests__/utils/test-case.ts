@@ -1,4 +1,4 @@
-import { Module, ModuleMetadata, Type } from '@nestjs/common';
+import { LoggerService, Module, ModuleMetadata, Type } from '@nestjs/common';
 import { AbstractHttpAdapter, NestFactory } from '@nestjs/core';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import MemoryStream = require('memorystream');
@@ -21,12 +21,18 @@ export class TestCase {
   private module?: Type<unknown>;
   private stream: pino.DestinationStream;
   private expectedCode = 200;
+  private loggerClass: Type<LoggerService> = Logger;
 
   constructor(
     private readonly adapter: AbstractHttpAdapter<unknown, unknown, unknown>,
     private readonly moduleMetadata: ModuleMetadata,
   ) {
     this.stream = new MemoryStream('', { readable: false });
+  }
+
+  useLoggerClass(loggerClass: Type<LoggerService>): this {
+    this.loggerClass = loggerClass;
+    return this;
   }
 
   forRoot(params?: Params | undefined, skipStreamInjection = false): this {
@@ -94,7 +100,7 @@ export class TestCase {
     const app = await NestFactory.create(this.module, this.adapter, {
       bufferLogs: true,
     });
-    app.useLogger(app.get(Logger));
+    app.useLogger(app.get(this.loggerClass));
 
     const server = await app.listen(await getFreePort(), '0.0.0.0');
     for (const path of paths) {
