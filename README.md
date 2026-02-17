@@ -72,7 +72,7 @@ const app = await NestFactory.create(AppModule, { bufferLogs: true });
 app.useLogger(app.get(Logger));
 ```
 
-Now you can use one of two loggers:
+Now you can use one of the loggers:
 
 ```ts
 // NestJS standard built-in logger.
@@ -119,6 +119,50 @@ export class MyService {
   }
 }
 ```
+
+### Drop-in replacement: NativeLogger
+
+`NativeLogger` is a **drop-in replacement** for NestJS's built-in `ConsoleLogger`. It produces **identical JSON output** — same field names, same argument handling, same error format — but powered by pino with request context in every log.
+
+If you're already using `ConsoleLogger` with `{ json: true }` and want to switch to pino without changing any of your logging code, this is for you:
+
+```ts
+import { NativeLogger, nativeLoggerOptions } from 'nestjs-pino';
+
+@Module({
+  imports: [LoggerModule.forRoot({ pinoHttp: nativeLoggerOptions })],
+})
+class AppModule {}
+
+const app = await NestFactory.create(AppModule, { bufferLogs: true });
+app.useLogger(app.get(NativeLogger));
+```
+
+That's it. Your existing `new Logger(MyService.name)` calls throughout the codebase will work exactly as before — same `message`, `context`, `level`, `timestamp`, `pid`, and `stack` fields — but now with pino's performance and automatic request context binding.
+
+**ConsoleLogger JSON output:**
+```json
+{"level":"log","pid":17580,"timestamp":1765305000999,"message":"Hello World","context":"AppService"}
+```
+
+**NativeLogger + nativeLoggerOptions output:**
+```json
+{"level":"log","pid":17580,"timestamp":1765305000999,"message":"Hello World","context":"AppService"}
+```
+
+#### How it differs from `Logger`
+
+- **`Logger`** (pino-native): treats extra arguments as pino interpolation values. `this.logger.log('foo %s', 'bar')` → `{"msg":"foo bar"}`
+- **`NativeLogger`** (NestJS-native): treats each argument as a separate log entry. `this.logger.log('foo', 'bar')` → two logs: `{"message":"foo"}` and `{"message":"bar"}`
+
+#### What matches ConsoleLogger exactly
+
+- Argument parsing: last string = context, rest = separate log entries
+- Error handling: `this.logger.error('msg', stackTrace, 'Ctx')` → `{"message":"msg","stack":"Error: ...","context":"Ctx"}`
+- Error objects: `this.logger.log(new Error('oops'))` → full error+stack as message string
+- Exception handler: thrown errors logged with full stack in `message` field
+- Object messages: `this.logger.log({ foo: 'bar' })` → `{"message":{"foo":"bar"}}`
+- Field names (with `nativeLoggerOptions`): `message`, `timestamp`, `pid`, `level`, `context`, `stack`
 
 Output:
 
