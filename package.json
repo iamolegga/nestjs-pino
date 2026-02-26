@@ -52,7 +52,7 @@
     "@types/jest": "^30.0.0",
     "@types/memorystream": "^0.3.4",
     "@types/node": "^25.0.0",
-    "@types/supertest": "^6.0.3",
+    "@types/supertest": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
     "eslint": "^9.39.1",
