@@ -60,7 +60,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^17.0.0",
-    "jest": "30.2.0",
+    "jest": "30.3.0",
     "memorystream": "^0.3.1",
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
