@@ -18,12 +18,14 @@ export class LoggerErrorInterceptor implements NestInterceptor {
         return throwError(() => {
           const response = context.switchToHttp().getResponse();
 
-          const isFastifyResponse = response.raw !== undefined;
+          if (response) {
+            const isFastifyResponse = response.raw !== undefined;
 
-          if (isFastifyResponse) {
-            response.raw.err = error;
-          } else {
-            response.err = error;
+            if (isFastifyResponse) {
+              response.raw.err = error;
+            } else {
+              response.err = error;
+            }
           }
 
           return error;
