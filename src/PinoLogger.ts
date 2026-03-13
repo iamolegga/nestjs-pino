@@ -52,12 +52,14 @@ export class PinoLogger implements PinoMethods {
   constructor(
     @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
   ) {
+    // Handle both array tuple [Options, DestinationStream] and object forms
+    const pinoHttpOptions = Array.isArray(pinoHttp) ? pinoHttp[0] : pinoHttp;
     if (
-      typeof pinoHttp === 'object' &&
-      'customAttributeKeys' in pinoHttp &&
-      typeof pinoHttp.customAttributeKeys !== 'undefined'
+      typeof pinoHttpOptions === 'object' &&
+      'customAttributeKeys' in pinoHttpOptions &&
+      typeof pinoHttpOptions.customAttributeKeys !== 'undefined'
     ) {
-      this.errorKey = pinoHttp.customAttributeKeys.err ?? 'err';
+      this.errorKey = pinoHttpOptions.customAttributeKeys.err ?? 'err';
     }
 
     if (!outOfContext) {
