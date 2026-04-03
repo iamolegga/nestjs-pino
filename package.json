@@ -72,7 +72,7 @@
     "ts-jest": "^29.4.5",
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "peerDependencies": {
     "@nestjs/common": "^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0",
