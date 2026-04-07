@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="Bombed Vovchansk, Ukraine" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Vovchansk_%282024-06-02%29_1513.jpg/640px-Vovchansk_%282024-06-02%29_1513.jpg"/>
+  <img alt="Bombed Vovchansk, Ukraine" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Vovchansk_%282024-06-02%29_1513.jpg/960px-Vovchansk_%282024-06-02%29_1513.jpg"/>
   <br />
   <small>"Vovchansk (2024-06-02) 1513" by National Police of Ukraine (Liut Brigade) is licensed under CC BY 4.0.</small>
 </p>
