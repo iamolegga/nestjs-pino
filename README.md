@@ -120,6 +120,18 @@ export class MyService {
 }
 ```
 
+> [!WARNING]
+> Register `LoggerModule` **only** via `forRoot(...)` / `forRootAsync(...)`, and
+> **only once**, in the root module. Never add the bare `LoggerModule` class to a
+> feature module's `imports`, not even just to inject `PinoLogger`. Because
+> `LoggerModule` is `@Global()`, both `Logger` and `PinoLogger` are already
+> available everywhere after the single root registration, so you never need to
+> re-import it. A bare import instantiates the module a second time, which
+> registers the `pino-http` middleware **again** and makes every request log
+> **twice**. The failure is completely silent: no compile error, no injection
+> failure, no warning
+> ([#3074](https://github.com/iamolegga/nestjs-pino/issues/3074)).
+
 ### Drop-in replacement: NativeLogger
 
 `NativeLogger` is a **drop-in replacement** for NestJS's built-in `ConsoleLogger`. It produces **identical JSON output** — same field names, same argument handling, same error format — but powered by pino with request context in every log.
