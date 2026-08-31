@@ -31,7 +31,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git commit -m "update version" -a
 
-      - uses: ad-m/github-push-action@v1.0.0
+      - uses: ad-m/github-push-action@v1.3.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
