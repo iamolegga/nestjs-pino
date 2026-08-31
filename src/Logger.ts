@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Injectable, LoggerService, Inject } from '@nestjs/common';
+import { Inject, Injectable, LoggerService } from '@nestjs/common';
 import { Level } from 'pino';
-
-import { Params, PARAMS_PROVIDER_TOKEN } from './params';
 import { PinoLogger } from './PinoLogger';
+import { PARAMS_PROVIDER_TOKEN, Params } from './params';
 
 @Injectable()
 export class Logger implements LoggerService {

@@ -11,7 +11,7 @@ describe('routing', () => {
       let notIncludedMsg: string;
       let testCase: TestCase;
 
-      beforeEach(async () => {
+      beforeEach(() => {
         includedMsg = Math.random().toString();
         excludedMsg = Math.random().toString();
         notIncludedMsg = Math.random().toString();

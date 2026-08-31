@@ -1,4 +1,10 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "__tests__", "example"]
+  "compilerOptions": {
+    "rootDir": "src",
+    // `prebuild` wipes `dist`, so a build-info file living anywhere else would
+    // make tsc consider the (now deleted) output up to date and emit nothing.
+    "incremental": false
+  },
+  "include": ["src"]
 }

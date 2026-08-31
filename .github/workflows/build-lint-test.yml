@@ -9,27 +9,15 @@ jobs:
       fail-fast: false
       matrix:
         nestjs-version:
-          - "8"
-          - "9"
-          - "10"
+          # 11.0.8 is the oldest release where `addLeadingSlash` keeps a `{/`
+          # path intact, which the default wildcard route relies on.
+          - "11.0.8"
           - "11"
+          - "12"
         nodejs-version:
-          - 20
           - 22
           - 24
-        include:
-          - nestjs-version: 8
-            typescript-version: 4
-            reflect-metadata-version: ^0.1.12
-          - nestjs-version: 9
-            typescript-version: 4
-            reflect-metadata-version: ^0.1.12
-          - nestjs-version: 10
-            typescript-version: 5
-            reflect-metadata-version: ^0.2.2
-          - nestjs-version: 11
-            typescript-version: 5
-            reflect-metadata-version: ^0.2.2
+          - 26
 
     runs-on: ubuntu-latest
 
@@ -49,8 +37,6 @@ jobs:
                 @nestjs/platform-fastify@${{ matrix.nestjs-version }} \
                 @nestjs/testing@${{ matrix.nestjs-version }} \
                 @types/node@${{ matrix.nodejs-version }} \
-                typescript@${{ matrix.typescript-version }} \
-                reflect-metadata@${{ matrix.reflect-metadata-version }} \
                 -D
       - run: npm run lint
       - uses: actions/cache@v4.3.0

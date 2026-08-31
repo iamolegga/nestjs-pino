@@ -1,4 +1,4 @@
-import { createServer } from 'net';
+import { createServer } from 'node:net';
 
 export async function getFreePort() {
   return new Promise<number>((res) => {

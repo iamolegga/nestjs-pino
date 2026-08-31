@@ -33,6 +33,10 @@ export class LogsContainer {
     return this.logs.find.bind(this.logs);
   }
 
+  get filter() {
+    return this.logs.filter.bind(this.logs);
+  }
+
   getStartLog(): LogObject | undefined {
     return this.logs.find((log) => log.msg.startsWith(startMsg));
   }

@@ -1,0 +1,5 @@
+{
+  // Without this the editor falls back to its bundled TypeScript while the
+  // build runs TypeScript 7, and the two disagree on diagnostics.
+  "recommendations": ["TypeScriptTeam.native-preview"]
+}

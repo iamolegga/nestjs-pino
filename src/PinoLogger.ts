@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Injectable, Inject, Scope } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import pino from 'pino';
 
-import { Params, isPassedLogger, PARAMS_PROVIDER_TOKEN } from './params';
+import { isPassedLogger, PARAMS_PROVIDER_TOKEN, Params } from './params';
 import { storage } from './storage';
 
-type PinoMethods = Pick<
-  pino.Logger,
+type PinoMethods<CustomLevels extends string = never> = Pick<
+  pino.Logger<CustomLevels>,
   'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 >;
 
@@ -31,13 +30,20 @@ let outOfContext: pino.Logger | undefined;
 
 export function __resetOutOfContextForTests() {
   outOfContext = undefined;
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore reset root for tests only
+  // @ts-expect-error reset root for tests only
   PinoLogger.root = undefined;
 }
 
+/**
+ * @typeParam CustomLevels - union of the `customLevels` keys passed to pino, so
+ * that `logger` exposes them. The class itself is instantiated by the DI
+ * container, which cannot infer a type argument, so custom levels are reachable
+ * as `pinoLogger.logger.myLevel(...)` rather than `pinoLogger.myLevel(...)`.
+ */
 @Injectable({ scope: Scope.TRANSIENT })
-export class PinoLogger implements PinoMethods {
+export class PinoLogger<CustomLevels extends string = never>
+  implements PinoMethods<CustomLevels>
+{
   /**
    * root is the most root logger that can be used to change params at runtime.
    * Accessible only when `useExisting` is not set to `true` in `Params`.
@@ -50,7 +56,8 @@ export class PinoLogger implements PinoMethods {
   protected readonly errorKey: string = 'err';
 
   constructor(
-    @Inject(PARAMS_PROVIDER_TOKEN) { pinoHttp, renameContext }: Params,
+    @Inject(PARAMS_PROVIDER_TOKEN)
+    { pinoHttp, renameContext }: Params<any, any, CustomLevels>,
   ) {
     // Handle both array tuple [Options, DestinationStream] and object forms
     const pinoHttpOptions = Array.isArray(pinoHttp) ? pinoHttp[0] : pinoHttp;
@@ -81,10 +88,15 @@ export class PinoLogger implements PinoMethods {
     this.contextName = renameContext || 'context';
   }
 
-  get logger(): pino.Logger {
-    // outOfContext is always set in runtime before starts using
-
-    return storage.getStore()?.logger || outOfContext!;
+  get logger(): pino.Logger<CustomLevels> {
+    // outOfContext is always set in runtime before starts using.
+    //
+    // The cast goes through `unknown` because `pino-http` augments
+    // `http.IncomingMessage` with a plain, non-generic `pino.Logger`, so `Store`
+    // cannot carry the custom levels through, and `pino.Logger`'s `onChild`
+    // makes the two instantiations mutually non-comparable.
+    return (storage.getStore()?.logger ||
+      outOfContext!) as unknown as pino.Logger<CustomLevels>;
   }
 
   trace(msg: string, ...args: any[]): void;
@@ -138,7 +150,10 @@ export class PinoLogger implements PinoMethods {
     store.responseLogger?.setBindings(fields);
   }
 
-  protected call(method: pino.Level, ...args: Parameters<LoggerFn>) {
+  protected call(
+    method: pino.Level | CustomLevels,
+    ...args: Parameters<LoggerFn>
+  ) {
     if (this.context) {
       if (isFirstArgObject(args)) {
         const firstArg = args[0];
@@ -160,8 +175,7 @@ export class PinoLogger implements PinoMethods {
         args = [{ [this.contextName]: this.context }, ...args];
       }
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore args are union of tuple types
+    // @ts-expect-error args are union of tuple types
     this.logger[method](...args);
   }
 }
