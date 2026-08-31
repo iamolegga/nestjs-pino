@@ -3,7 +3,7 @@ const responseMsg = 'request completed';
 
 export type LogObject = {
   msg: string;
-  req?: { id: number };
+  req?: { id: number | string; url: string };
   res?: Record<string, unknown>;
   context?: string;
   err?: { message: string; stack: string; type: string };

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { Controller, Get, Logger } from '@nestjs/common';
 import pino from 'pino';
 
@@ -6,6 +8,28 @@ import { TestCase } from './utils/test-case';
 
 // `noUncheckedIndexedAccess` types the level map's members as optional.
 const WARN = pino.levels.values.warn!;
+
+// Until @nestjs/platform-fastify@11.2.0, the adapter prepended the global prefix
+// to every middleware path that did not already start with it, so a path
+// excluded from the prefix could not be reached by middleware at all. The
+// version is read off the file because v12's exports map does not expose
+// `./package.json`.
+const fastifyPlatform = JSON.parse(
+  readFileSync('node_modules/@nestjs/platform-fastify/package.json', 'utf8'),
+) as { version: string };
+
+const fastifySupportsExcludedRoutes = atLeast(
+  fastifyPlatform.version,
+  [11, 2, 0],
+);
+
+function atLeast(version: string, min: [number, number, number]): boolean {
+  const parts = version.split('.').map(Number);
+  for (const [i, expected] of min.entries()) {
+    if (parts[i] !== expected) return parts[i]! > expected;
+  }
+  return true;
+}
 
 // Regression test for #2213 / #2287.
 //
@@ -70,6 +94,56 @@ describe('global prefix', () => {
         const logs = await testCase.run('/v1');
         const warnings = logs.filter((v) => (v.level as number) >= WARN);
         expect(warnings).toStrictEqual([]);
+      });
+
+      // Regression test for #2254.
+      //
+      // A path excluded from the global prefix is served outside it, while the
+      // default route is prefixed like any other middleware route, so `/health`
+      // is not covered by `/v1{/*splat}`. NestJS re-adds excluded paths on its
+      // own, but only for routes its `RouteInfoPathExtractor.isAWildcard`
+      // recognises, and `{/*splat}` is not one of them.
+      describe('with a path excluded from the prefix', () => {
+        beforeEach(() => {
+          @Controller('/')
+          class TestController {
+            @Get()
+            root() {
+              return {};
+            }
+          }
+
+          @Controller('health')
+          class HealthController {
+            @Get()
+            health() {
+              return {};
+            }
+          }
+
+          testCase = new TestCase(new PlatformAdapter(), {
+            controllers: [TestController, HealthController],
+          })
+            .setGlobalPrefix('v1', { exclude: ['health'] })
+            .forRoot();
+        });
+
+        it.skipIf(
+          PlatformAdapter.name === 'FastifyAdapter' &&
+            !fastifySupportsExcludedRoutes,
+        )('logs both the prefixed and the excluded path', async () => {
+          const logs = await testCase.run('/v1', '/health');
+          const completed = logs
+            .filter((v) => v.msg === 'request completed')
+            .map((v) => v.req?.url);
+          expect(completed).toStrictEqual(['/v1', '/health']);
+        });
+
+        it('starts up with no warnings at all', async () => {
+          const logs = await testCase.run('/health');
+          const warnings = logs.filter((v) => (v.level as number) >= WARN);
+          expect(warnings).toStrictEqual([]);
+        });
       });
     });
   }

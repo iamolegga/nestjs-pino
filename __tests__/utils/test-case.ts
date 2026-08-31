@@ -1,4 +1,5 @@
 import {
+  type INestApplication,
   type LoggerService,
   Module,
   type ModuleMetadata,
@@ -21,12 +22,19 @@ import { __resetOutOfContextForTests as __resetSingletons } from '../../src/Pino
 import { getFreePort } from './get-free-port';
 import { LogsContainer } from './logs';
 
+type GlobalPrefixOptions = NonNullable<
+  Parameters<INestApplication['setGlobalPrefix']>[1]
+>;
+
 export class TestCase {
   private module?: Type<unknown>;
   private stream: pino.DestinationStream;
   private expectedCode = 200;
   private loggerClass: Type<LoggerService> = Logger;
   private globalPrefix?: string;
+  // `GlobalPrefixOptions` lives in `@nestjs/common/interfaces`, a subpath that
+  // no longer resolves under v12, so it is read off the method instead.
+  private globalPrefixOptions?: GlobalPrefixOptions;
 
   constructor(
     private readonly adapter: AbstractHttpAdapter<unknown, unknown, unknown>,
@@ -40,8 +48,9 @@ export class TestCase {
     return this;
   }
 
-  setGlobalPrefix(prefix: string): this {
+  setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.globalPrefix = prefix;
+    this.globalPrefixOptions = options;
     return this;
   }
 
@@ -113,7 +122,7 @@ export class TestCase {
     app.useLogger(app.get(this.loggerClass));
 
     if (this.globalPrefix) {
-      app.setGlobalPrefix(this.globalPrefix);
+      app.setGlobalPrefix(this.globalPrefix, this.globalPrefixOptions);
     }
 
     const server = await app.listen(await getFreePort(), '0.0.0.0');

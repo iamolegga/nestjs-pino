@@ -10,6 +10,7 @@ import {
   type Provider,
   RequestMethod,
 } from '@nestjs/common';
+import { ApplicationConfig } from '@nestjs/core';
 import { pinoHttp } from 'pino-http';
 
 import { createProvidersForDecorated } from './InjectPinoLogger';
@@ -96,12 +97,15 @@ export class LoggerModule implements NestModule {
     };
   }
 
-  constructor(@Inject(PARAMS_PROVIDER_TOKEN) private readonly params: Params) {}
+  constructor(
+    @Inject(PARAMS_PROVIDER_TOKEN) private readonly params: Params,
+    private readonly applicationConfig: ApplicationConfig,
+  ) {}
 
   configure(consumer: MiddlewareConsumer) {
     const {
       exclude,
-      forRoutes = DEFAULT_ROUTES,
+      forRoutes = this.defaultRoutes(),
       pinoHttp,
       useExisting,
       assignResponse,
@@ -121,6 +125,27 @@ export class LoggerModule implements NestModule {
     } else {
       consumer.apply(...middlewares).forRoutes(...forRoutes);
     }
+  }
+
+  /**
+   * A path excluded from the global prefix is served outside of it, while
+   * `DEFAULT_ROUTES` is prefixed like any other middleware route, so such a
+   * path would go unlogged. NestJS adds excluded paths back on its own, but
+   * only for routes that `RouteInfoPathExtractor.isAWildcard` recognises —
+   * which `{/*splat}`, with its leading slash deliberately missing, is not.
+   *
+   * Only the default applies: an explicit `forRoutes` is the user's own call.
+   */
+  private defaultRoutes() {
+    const { exclude } = this.applicationConfig.getGlobalPrefixOptions();
+
+    return [
+      ...DEFAULT_ROUTES,
+      ...(exclude ?? []).map(({ path, requestMethod }) => ({
+        path,
+        method: requestMethod,
+      })),
+    ];
   }
 }
 
