@@ -1,0 +1,39 @@
+name: on-push-or-release
+
+on:
+  push:
+    branches:
+      - master
+  release:
+    types: [created]
+
+jobs:
+  build-lint-test:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/build-lint-test.yml
+    secrets: inherit
+
+  coverage:
+    if: github.event_name == 'push'
+    needs:
+      - build-lint-test
+    uses: ./.github/workflows/publish-coverage.yml
+    secrets: inherit
+
+  publish-alpha:
+    if: github.event_name == 'push' && github.actor != 'dependabot[bot]' && github.actor != 'mergify[bot]'
+    needs:
+      - build-lint-test
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/publish-alpha.yml
+    secrets: inherit
+
+  publish-with-git-tag-version:
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/publish-with-git-tag-version.yml
+    secrets: inherit

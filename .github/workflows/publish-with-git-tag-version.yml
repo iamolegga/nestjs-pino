@@ -20,21 +20,25 @@ jobs:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
 
+      # trusted publishing over OIDC needs npm >= 11.5.1
+      - run: npm install -g npm@latest
+
       - run: npm ci
 
       - run: npm run build
 
       - run: npm version --no-git-tag-version $(git describe --abbrev=0 --tags)
 
+      # publish before pushing the version commit, so that a failed publish
+      # doesn't leave master with a version that is not on the registry.
+      # authenticated over OIDC, provenance is generated automatically
+      - run: npm publish
+
       - run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git commit -m "update version" -a
+          git commit -m "update version" -a || echo "version is already up to date"
 
       - uses: ad-m/github-push-action@v1.3.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
