@@ -6,6 +6,8 @@ on:
       - master
   release:
     types: [created]
+  # manual retry, e.g. when a publish failed after master was already bumped
+  workflow_dispatch:
 
 jobs:
   build-lint-test:
@@ -31,7 +33,7 @@ jobs:
     secrets: inherit
 
   publish-with-git-tag-version:
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
       id-token: write
