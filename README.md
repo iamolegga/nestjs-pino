@@ -626,7 +626,9 @@ app.useGlobalInterceptors(new LoggerErrorInterceptor());
 - **Requirements changed.** NestJS `11.0.8+` or `12` (11.0.8 is where NestJS
   started preserving the `{/...}` route syntax the default middleware route
   relies on), `pino@10`, `pino-http@11`, Node.js `>=22.12`. Support for NestJS
-  8-10, pino 7-9 and pino-http 6-10 is dropped.
+  8-10, pino 7-9 and pino-http 6-10 is dropped. `@nestjs/core` is now a peer
+  dependency alongside `@nestjs/common`; every NestJS application already has
+  it installed.
 - **The package now ships from `dist/` behind an `exports` map.** The public
   entry point is unchanged, but deep imports such as
   `nestjs-pino/PinoLogger` no longer resolve — import from `nestjs-pino`
@@ -636,6 +638,12 @@ Everything else is backwards compatible. In particular the warning NestJS used
 to print on startup when a global prefix was set
 (`Unsupported route path: "/v1/*"`) is gone, and requests hitting the prefix
 root itself are now logged as well.
+
+Paths excluded from the global prefix with
+`app.setGlobalPrefix(prefix, { exclude })` are logged too. On Fastify this needs
+`@nestjs/platform-fastify@11.2.0` or newer: until then the adapter prepended the
+global prefix to every middleware path that did not already start with it, which
+put excluded paths out of reach. Express has no such requirement.
 
 ### v1
 
