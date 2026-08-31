@@ -27,7 +27,9 @@ jobs:
 
       - run: npm run build
 
-      - run: npm version --no-git-tag-version $(git describe --abbrev=0 --tags)
+      # --allow-same-version so that a release can be re-cut from a master
+      # that was already bumped by an earlier, failed run
+      - run: npm version --no-git-tag-version --allow-same-version $(git describe --abbrev=0 --tags)
 
       # publish before pushing the version commit, so that a failed publish
       # doesn't leave master with a version that is not on the registry.
