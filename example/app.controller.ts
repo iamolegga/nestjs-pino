@@ -1,8 +1,8 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 
-import { InjectPinoLogger, PinoLogger } from '../src';
+import { InjectPinoLogger, type PinoLogger } from '../src';
 
-import { MyService } from './my.service';
+import type { MyService } from './my.service';
 
 @Controller()
 export class AppController {

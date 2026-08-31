@@ -1,3 +1,7 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib"
+  // TypeScript 7 is the native (Go) compiler: it ships only `tsc`, with no
+  // `tsserver` under `node_modules/typescript/lib`, so `typescript.tsdk` is
+  // deliberately not set here. The language server comes from the
+  // `TypeScriptTeam.native-preview` extension instead — see extensions.json.
+  "js/ts.experimental.useTsgo": true
 }

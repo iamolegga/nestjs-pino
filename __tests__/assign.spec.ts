@@ -3,7 +3,7 @@ import {
   Get,
   Injectable,
   Logger,
-  OnModuleInit,
+  type OnModuleInit,
 } from '@nestjs/common';
 
 import { PinoLogger } from '../src';

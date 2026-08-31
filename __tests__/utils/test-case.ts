@@ -1,16 +1,20 @@
-import { LoggerService, Module, ModuleMetadata, Type } from '@nestjs/common';
+import {
+  type LoggerService,
+  Module,
+  type ModuleMetadata,
+  type Type,
+} from '@nestjs/common';
 import { AbstractHttpAdapter, NestFactory } from '@nestjs/core';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import MemoryStream = require('memorystream');
-import pino from 'pino';
+import MemoryStream from 'memorystream';
+import type pino from 'pino';
 import { Options } from 'pino-http';
-import * as request from 'supertest';
+import request from 'supertest';
 
 import {
   Logger,
   LoggerModule,
-  LoggerModuleAsyncParams,
-  Params,
+  type LoggerModuleAsyncParams,
+  type Params,
 } from '../../src';
 import { __resetOutOfContextForTests as __resetSingletons } from '../../src/PinoLogger';
 
@@ -22,6 +26,7 @@ export class TestCase {
   private stream: pino.DestinationStream;
   private expectedCode = 200;
   private loggerClass: Type<LoggerService> = Logger;
+  private globalPrefix?: string;
 
   constructor(
     private readonly adapter: AbstractHttpAdapter<unknown, unknown, unknown>,
@@ -35,7 +40,12 @@ export class TestCase {
     return this;
   }
 
-  forRoot(params?: Params | undefined, skipStreamInjection = false): this {
+  setGlobalPrefix(prefix: string): this {
+    this.globalPrefix = prefix;
+    return this;
+  }
+
+  forRoot(params?: Params, skipStreamInjection = false): this {
     let finalParams: Params | undefined = params;
 
     if (!skipStreamInjection) {
@@ -102,6 +112,10 @@ export class TestCase {
     });
     app.useLogger(app.get(this.loggerClass));
 
+    if (this.globalPrefix) {
+      app.setGlobalPrefix(this.globalPrefix);
+    }
+
     const server = await app.listen(await getFreePort(), '0.0.0.0');
     for (const path of paths) {
       await request(server).get(path).expect(this.expectedCode);
@@ -116,20 +130,17 @@ export class TestCase {
       case !params:
         return { pinoHttp: this.stream };
       case !!params!.useExisting:
-        return params!;
+        return params;
       case Array.isArray(params!.pinoHttp):
         return {
           ...params,
-          pinoHttp: [
-            (params!.pinoHttp as [Options, pino.DestinationStream])[0],
-            this.stream,
-          ],
+          pinoHttp: [params.pinoHttp[0], this.stream],
         };
       case !!params!.pinoHttp:
         return {
           ...params,
           pinoHttp: {
-            ...(params!.pinoHttp as Options),
+            ...(params.pinoHttp as Options),
             stream: this.stream,
           },
         };

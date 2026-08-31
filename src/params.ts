@@ -1,19 +1,44 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { IncomingMessage, ServerResponse } from 'node:http';
+
 import {
-  MiddlewareConfigProxy,
+  FactoryProvider,
+  MiddlewareConsumer,
   ModuleMetadata,
-} from '@nestjs/common/interfaces';
-import { Logger, DestinationStream } from 'pino';
+} from '@nestjs/common';
+import { DestinationStream, Logger } from 'pino';
 import { Options } from 'pino-http';
 
-export type PassedLogger = { logger: Logger };
+// The `@nestjs/common/interfaces` subpath stopped resolving in v12, where the
+// package is ESM and its exports map turns `./interfaces` into a missing
+// `interfaces.js`. `MiddlewareConfigProxy` is not re-exported from the root
+// either, so derive it from `MiddlewareConsumer`.
+export type MiddlewareConfigProxy = ReturnType<MiddlewareConsumer['apply']>;
 
-export interface Params {
+export type PassedLogger<CustomLevels extends string = never> = {
+  logger: Logger<CustomLevels>;
+};
+
+/**
+ * The type parameters are all optional and default to what `pino-http` itself
+ * defaults to, so `Params` keeps working unparameterised.
+ *
+ * @typeParam IM - request type, e.g. express' `Request`
+ * @typeParam SR - response type, e.g. express' `Response`
+ * @typeParam CustomLevels - union of the `customLevels` keys, if any
+ */
+export interface Params<
+  IM = IncomingMessage,
+  SR = ServerResponse,
+  CustomLevels extends string = never,
+> {
   /**
    * Optional parameters for `pino-http` module
    * @see https://github.com/pinojs/pino-http#pinohttpopts-stream
    */
-  pinoHttp?: Options | DestinationStream | [Options, DestinationStream];
+  pinoHttp?:
+    | Options<IM, SR, CustomLevels>
+    | DestinationStream
+    | [Options<IM, SR, CustomLevels>, DestinationStream];
 
   /**
    * Optional parameter for routing. It should implement interface of
@@ -61,17 +86,44 @@ export interface Params {
    * (e.g.`Request completed`).
    */
   assignResponse?: boolean;
+
+  /**
+   * Optional parameters for `NativeLogger`, mirroring the `ConsoleLogger`
+   * options of the same name so that an application can move over keeping its
+   * existing configuration. Unlike NestJS, both are honoured on every supported
+   * NestJS version; only the default of `structuredParams` follows the
+   * `ConsoleLogger` that is actually installed.
+   */
+  nativeLogger?: {
+    /**
+     * If enabled, plain objects logged after the message are attached to the
+     * same entry as `params` instead of being logged as separate entries.
+     * @default true on NestJS 12+, false before that
+     */
+    structuredParams?: boolean;
+
+    /**
+     * If enabled, params are spread into the root of the record instead of
+     * nested under `params`. Keys already used by the log record itself are
+     * never overwritten.
+     * @default false
+     */
+    flattenParams?: boolean;
+  };
 }
 
-// for support of nestjs@8 we don't use
-//   extends Pick<FactoryProvider, 'provide' | 'useFactory'>
-// as it's `useFactory` return type in v8 is `T` instead of `T | Promise<T>` as
-// in feature versions, so it's not compatible
-export interface LoggerModuleAsyncParams
-  extends Pick<ModuleMetadata, 'imports' | 'providers'> {
-  useFactory: (...args: any[]) => Params | Promise<Params>;
-  inject?: any[];
-}
+export interface LoggerModuleAsyncParams<
+  IM = IncomingMessage,
+  SR = ServerResponse,
+  CustomLevels extends string = never,
+> extends Pick<ModuleMetadata, 'imports' | 'providers'>,
+    // `provide` is deliberately not picked: `forRootAsync` sets it to
+    // `PARAMS_PROVIDER_TOKEN` itself, so a caller-supplied token would only be
+    // overwritten.
+    Pick<
+      FactoryProvider<Params<IM, SR, CustomLevels>>,
+      'useFactory' | 'inject'
+    > {}
 
 export function isPassedLogger(
   pinoHttpProp: any,

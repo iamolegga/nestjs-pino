@@ -1,11 +1,11 @@
 import {
+  ConsoleLogger,
   Controller,
   Get,
   Logger,
-  ConsoleLogger,
-  LogLevel,
+  type LogLevel,
 } from '@nestjs/common';
-import pino from 'pino';
+import type pino from 'pino';
 
 import { NativeLogger, nativeLoggerOptions } from '../src';
 
@@ -18,10 +18,13 @@ const loggerMethods: [LogLevel, pino.Level][] = [
   ['log', 'info'],
   ['warn', 'warn'],
   ['error', 'error'],
+  ['fatal', 'fatal'],
 ];
 
-if (ConsoleLogger.prototype.hasOwnProperty('fatal'))
-  loggerMethods.push([<LogLevel>'fatal', 'fatal']);
+// Same capability probe NativeLogger uses: from NestJS v12 plain objects passed
+// after the message are collected into `params` on a single entry instead of
+// being logged one entry each.
+const hasStructuredParams = 'stringifyParams' in ConsoleLogger.prototype;
 
 // NestJS's built-in Logger always appends its constructor context as the last
 // string argument when forwarding to the app-level logger (NativeLogger).
@@ -122,7 +125,7 @@ describe('NativeLogger', () => {
           expect(extraLog).toBeTruthy();
         });
 
-        it('multiple messages with object (each logged separately)', async () => {
+        it('object after the message matches ConsoleLogger', async () => {
           const msg1 = Math.random().toString();
           const msg2Key = Math.random().toString();
           const msg2Val = Math.random().toString();
@@ -133,7 +136,6 @@ describe('NativeLogger', () => {
             @Get()
             get() {
               // NestJS Logger forwards as: log(msg1, {key:val}, 'TestController')
-              // NativeLogger: context='TestController', messages=[msg1, {key:val}]
               this.logger.log(msg1, { [msg2Key]: msg2Val });
               return {};
             }
@@ -146,18 +148,34 @@ describe('NativeLogger', () => {
             .forRoot({ pinoHttp: nativeLoggerOptions })
             .run();
 
-          const strLog = logs.find(
-            (v) => v.message === msg1 && v.context === 'TestController',
-          );
-          expect(strLog).toBeTruthy();
+          if (hasStructuredParams) {
+            // v12: a single entry carrying the object under `params`.
+            const entry = logs.find(
+              (v) => v.message === msg1 && v.context === 'TestController',
+            );
+            expect(entry).toBeTruthy();
+            expect(
+              (entry?.params as Record<string, unknown> | undefined)?.[msg2Key],
+            ).toBe(msg2Val);
+            expect(
+              logs.some((v) => typeof v.message === 'object' && !!v.message),
+            ).toBe(false);
+          } else {
+            // v11: one entry per argument, and no `params` field at all.
+            const strLog = logs.find(
+              (v) => v.message === msg1 && v.context === 'TestController',
+            );
+            expect(strLog).toBeTruthy();
+            expect(strLog?.params).toBeUndefined();
 
-          const objLog = logs.find(
-            (v) =>
-              typeof v.message === 'object' &&
-              (v.message as Record<string, unknown>)[msg2Key] === msg2Val &&
-              v.context === 'TestController',
-          );
-          expect(objLog).toBeTruthy();
+            const objLog = logs.find(
+              (v) =>
+                typeof v.message === 'object' &&
+                (v.message as Record<string, unknown>)[msg2Key] === msg2Val &&
+                v.context === 'TestController',
+            );
+            expect(objLog).toBeTruthy();
+          }
         });
 
         it('object message with NestJS context', async () => {
@@ -217,8 +235,8 @@ describe('NativeLogger', () => {
           const found = logs.find(
             (v) =>
               typeof v.message === 'string' &&
-              (v.message as string).includes(errorMsg) &&
-              (v.message as string).includes('at ') &&
+              v.message.includes(errorMsg) &&
+              v.message.includes('at ') &&
               v.context === 'TestController',
           );
           expect(found).toBeTruthy();
@@ -308,9 +326,7 @@ describe('NativeLogger', () => {
             .run();
 
           const found = logs.find(
-            (v) =>
-              typeof v.message === 'string' &&
-              (v.message as string).includes(msg),
+            (v) => typeof v.message === 'string' && v.message.includes(msg),
           );
           expect(found).toBeTruthy();
         });

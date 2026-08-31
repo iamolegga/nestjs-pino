@@ -40,7 +40,13 @@
 
 ---
 
-<p align="center"><b>This is documentation for v2+ which works with NestJS 8+.<br/>Please see documentation for the previous major version which works with NestJS < 8 <a href="https://github.com/iamolegga/nestjs-pino/tree/v1.4.0#readme">here</a>.</b></p>
+<p align="center"><b>This is the documentation for v5. Compatibility with earlier majors:</b></p>
+
+| nestjs-pino | NestJS       | pino         | pino-http                     | Node.js  |
+| ----------- | ------------ | ------------ | ----------------------------- | -------- |
+| v5          | 11.0.8+, 12  | 10           | 11                            | >=22.12  |
+| [v4](https://github.com/iamolegga/nestjs-pino/tree/v4.6.1#readme) | 8, 9, 10, 11 | 7.5+, 8, 9, 10 | 6.4+, 7, 8, 9, 10, 11 | >=14     |
+| [v1](https://github.com/iamolegga/nestjs-pino/tree/v1.4.0#readme) | < 8          |              |                               |          |
 
 ---
 
@@ -165,16 +171,56 @@ That's it. Your existing `new Logger(MyService.name)` calls throughout the codeb
 #### How it differs from `Logger`
 
 - **`Logger`** (pino-native): treats extra arguments as pino interpolation values. `this.logger.log('foo %s', 'bar')` → `{"msg":"foo bar"}`
-- **`NativeLogger`** (NestJS-native): treats each argument as a separate log entry. `this.logger.log('foo', 'bar')` → two logs: `{"message":"foo"}` and `{"message":"bar"}`
+- **`NativeLogger`** (NestJS-native): parses arguments the way `ConsoleLogger` does. `this.logger.log('foo', 'bar', 'Ctx')` → two logs, `{"message":"foo","context":"Ctx"}` and `{"message":"bar","context":"Ctx"}`
 
 #### What matches ConsoleLogger exactly
 
 - Argument parsing: last string = context, rest = separate log entries
+- Structured params: on NestJS 12, plain objects after the message are merged into a single `params` field on one entry (`ConsoleLoggerOptions.structuredParams`, on by default) — `this.logger.log('foo', { a: 1 }, { b: 2 })` → `{"message":"foo","params":{"a":1,"b":2}}`. On NestJS 11 each of them is a separate entry. `NativeLogger` follows the `ConsoleLogger` of the NestJS version you actually have, so out of the box there is nothing to configure — see below to override it
 - Error handling: `this.logger.error('msg', stackTrace, 'Ctx')` → `{"message":"msg","stack":"Error: ...","context":"Ctx"}`
 - Error objects: `this.logger.log(new Error('oops'))` → full error+stack as message string
 - Exception handler: thrown errors logged with full stack in `message` field
 - Object messages: `this.logger.log({ foo: 'bar' })` → `{"message":{"foo":"bar"}}`
 - Field names (with `nativeLoggerOptions`): `message`, `timestamp`, `pid`, `level`, `context`, `stack`
+
+#### Keeping your ConsoleLogger options
+
+If your application configures `ConsoleLogger` rather than relying on its
+defaults, pass the same values to keep the output identical after the switch:
+
+```ts
+LoggerModule.forRoot({
+  pinoHttp: nativeLoggerOptions,
+  nativeLogger: {
+    // NestJS 12 default is `true`, NestJS 11 has no such option and behaves
+    // as `false`. Omit it to follow the ConsoleLogger you actually have.
+    structuredParams: true,
+    // Spread params into the root of the record instead of nesting them
+    // under `params`. NestJS default is `false`.
+    flattenParams: true,
+  },
+});
+```
+
+```json
+{"level":"log","message":"foo","context":"AppService","a":1,"b":2}
+```
+
+Unlike NestJS, both options are honoured on every supported NestJS version —
+the collecting is implemented by this library, and the installed `ConsoleLogger`
+only decides the default of `structuredParams`. That also lets you switch to the
+NestJS 12 output while still on NestJS 11, so upgrading NestJS later does not
+change your logs.
+
+A flattened param named `context` or `stack` is used as such when the call does
+not set them itself, and loses to the explicit form when it does — so
+`log('msg', { context: 'A' })` logs the context `A`, while
+`log('msg', { context: 'A' }, 'B')` logs `B`.
+
+Collisions with the fields pino adds — the level, the timestamp, the message
+key, the base bindings — are not resolved at all: pino does not deduplicate keys
+either, and their names depend on your pino options, so naming a param `level`
+is your call to make.
 
 Output:
 
@@ -236,15 +282,19 @@ class MyModule {}
 The following interface is using for the configuration:
 
 ```ts
-interface Params {
+interface Params<
+  IM = IncomingMessage,
+  SR = ServerResponse,
+  CustomLevels extends string = never,
+> {
   /**
    * Optional parameters for `pino-http` module
    * @see https://github.com/pinojs/pino-http#api
    */
   pinoHttp?:
-    | pinoHttp.Options
+    | pinoHttp.Options<IM, SR, CustomLevels>
     | DestinationStream
-    | [pinoHttp.Options, DestinationStream];
+    | [pinoHttp.Options<IM, SR, CustomLevels>, DestinationStream];
 
   /**
    * Optional parameter for routing. It should implement interface of
@@ -285,8 +335,55 @@ interface Params {
    * {"level":30, ... "RENAME_CONTEXT_VALUE_HERE":"AppController" }
    */
   renameContext?: string;
+
+  /**
+   * Optional parameter to also assign the response logger during calls to
+   * `PinoLogger.assign`. By default, `assign` does not impact response logs
+   * (e.g.`Request completed`).
+   */
+  assignResponse?: boolean;
 }
 ```
+
+#### Typing the request, response and custom levels
+
+All three type parameters are optional and default to what `pino-http` itself
+defaults to, so `Params` keeps working unparameterised. Pass them when you want
+your platform's request/response types inside the `pinoHttp` callbacks:
+
+```ts
+import type { Request, Response } from 'express';
+import { LoggerModule, Params } from 'nestjs-pino';
+
+const params: Params<Request, Response> = {
+  pinoHttp: {
+    // `req` is an express Request here, not a bare IncomingMessage
+    genReqId: (req) => req.headers['x-correlation-id'] ?? randomUUID(),
+    serializers: { req: (req: Request) => ({ id: req.id, url: req.url }) },
+  },
+};
+
+LoggerModule.forRoot(params);
+```
+
+The third parameter carries pino's `customLevels`:
+
+```ts
+type CustomLevels = 'audit';
+
+const params: Params<Request, Response, CustomLevels> = {
+  pinoHttp: {
+    customLevels: { audit: 35 },
+    useLevel: 'audit',
+  },
+};
+```
+
+Custom levels are reachable through the underlying pino instance —
+`pinoLogger.logger.audit('...')`, not `pinoLogger.audit('...')`. `PinoLogger` is
+instantiated by the NestJS DI container, which cannot infer a type argument, so
+the level methods cannot be synthesised onto the class itself.
+
 
 ### Synchronous configuration
 
@@ -523,6 +620,22 @@ app.useGlobalInterceptors(new LoggerErrorInterceptor());
 ```
 
 ## Migration
+
+### v5
+
+- **Requirements changed.** NestJS `11.0.8+` or `12` (11.0.8 is where NestJS
+  started preserving the `{/...}` route syntax the default middleware route
+  relies on), `pino@10`, `pino-http@11`, Node.js `>=22.12`. Support for NestJS
+  8-10, pino 7-9 and pino-http 6-10 is dropped.
+- **The package now ships from `dist/` behind an `exports` map.** The public
+  entry point is unchanged, but deep imports such as
+  `nestjs-pino/PinoLogger` no longer resolve — import from `nestjs-pino`
+  instead.
+
+Everything else is backwards compatible. In particular the warning NestJS used
+to print on startup when a global prefix was set
+(`Unsupported route path: "/v1/*"`) is gone, and requests hitting the prefix
+root itself are now logged as well.
 
 ### v1
 

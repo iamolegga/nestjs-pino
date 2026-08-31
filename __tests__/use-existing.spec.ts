@@ -2,12 +2,11 @@ import {
   Controller,
   Get,
   Injectable,
-  OnModuleInit,
   Logger,
+  type OnModuleInit,
 } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import MemoryStream = require('memorystream');
+import MemoryStream from 'memorystream';
 import pino from 'pino';
 
 import { LogsContainer } from './utils/logs';

@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Injectable } from '@nestjs/common';
 
-import { Logger, Params, PARAMS_PROVIDER_TOKEN, PinoLogger } from '../src';
+import { Logger, PARAMS_PROVIDER_TOKEN, Params, PinoLogger } from '../src';
 
 import { platforms } from './utils/platforms';
 import { TestCase } from './utils/test-case';

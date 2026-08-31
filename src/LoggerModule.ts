@@ -1,41 +1,50 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IncomingMessage, ServerResponse } from 'node:http';
 
 import {
+  type DynamicModule,
   Global,
-  Module,
-  DynamicModule,
-  NestModule,
-  MiddlewareConsumer,
-  RequestMethod,
   Inject,
+  type MiddlewareConsumer,
+  Module,
+  type NestModule,
+  type Provider,
+  RequestMethod,
 } from '@nestjs/common';
-import { Provider } from '@nestjs/common/interfaces';
 import { pinoHttp } from 'pino-http';
 
 import { createProvidersForDecorated } from './InjectPinoLogger';
 import { Logger } from './Logger';
 import { NativeLogger } from './NativeLogger';
-import {
-  Params,
-  LoggerModuleAsyncParams,
-  PARAMS_PROVIDER_TOKEN,
-} from './params';
 import { PinoLogger } from './PinoLogger';
+import {
+  type LoggerModuleAsyncParams,
+  PARAMS_PROVIDER_TOKEN,
+  type Params,
+} from './params';
 import { Store, storage } from './storage';
 
 /**
- * As NestJS@11 still supports express@4 `*`-style routing by itself let's keep
- * it for the backward compatibility. On the next major NestJS release `*` we
- * can replace it with `/{*splat}`, and drop the support for NestJS@9 and below.
+ * path-to-regexp v8, used by express@5 and @fastify/middie@9, no longer accepts
+ * the unnamed `*` wildcard: NestJS auto-converts it, but warns while doing so
+ * as soon as a global prefix is set.
+ *
+ * The missing leading slash is deliberate, and is supported upstream: since
+ * @nestjs/common@11.0.8 `addLeadingSlash` leaves a path starting with `{/`
+ * alone. A global prefix is then applied as `/v1{/*splat}` rather than
+ * `/v1/{*splat}`, which matters because the latter does not match the prefix
+ * root itself — `/v1` would go unlogged, while `/v1/anything` would not.
  */
-const DEFAULT_ROUTES = [{ path: '*', method: RequestMethod.ALL }];
+const DEFAULT_ROUTES = [{ path: '{/*splat}', method: RequestMethod.ALL }];
 
 @Global()
 @Module({ providers: [Logger, NativeLogger], exports: [Logger, NativeLogger] })
 export class LoggerModule implements NestModule {
-  static forRoot(params?: Params | undefined): DynamicModule {
-    const paramsProvider: Provider<Params> = {
+  static forRoot<
+    IM = IncomingMessage,
+    SR = ServerResponse,
+    CustomLevels extends string = never,
+  >(params?: Params<IM, SR, CustomLevels>): DynamicModule {
+    const paramsProvider: Provider<Params<IM, SR, CustomLevels>> = {
       provide: PARAMS_PROVIDER_TOKEN,
       useValue: params || {},
     };
@@ -55,8 +64,14 @@ export class LoggerModule implements NestModule {
     };
   }
 
-  static forRootAsync(params: LoggerModuleAsyncParams): DynamicModule {
-    const paramsProvider: Provider<Params | Promise<Params>> = {
+  static forRootAsync<
+    IM = IncomingMessage,
+    SR = ServerResponse,
+    CustomLevels extends string = never,
+  >(params: LoggerModuleAsyncParams<IM, SR, CustomLevels>): DynamicModule {
+    const paramsProvider: Provider<
+      Params<IM, SR, CustomLevels> | Promise<Params<IM, SR, CustomLevels>>
+    > = {
       provide: PARAMS_PROVIDER_TOKEN,
       useFactory: params.useFactory,
       inject: params.inject,

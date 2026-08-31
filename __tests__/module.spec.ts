@@ -1,6 +1,5 @@
-import { Module, Controller, Get, Injectable, Logger } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import MemoryStream = require('memorystream');
+import { Controller, Get, Injectable, Logger, Module } from '@nestjs/common';
+import MemoryStream from 'memorystream';
 
 import { LoggerModule, Params } from '../src';
 
@@ -213,9 +212,8 @@ describe('module initialization', () => {
             controllers: [TestController],
           })
             .forRootAsync({
-              useFactory: async (): Promise<Params> => {
-                return { pinoHttp: { level: 'info' } };
-              },
+              useFactory: (): Promise<Params> =>
+                Promise.resolve({ pinoHttp: { level: 'info' } }),
             })
             .run();
 

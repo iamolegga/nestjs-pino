@@ -1,0 +1,30 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.11/schema.json",
+  "formatter": { "indentStyle": "space" },
+  "javascript": {
+    "formatter": { "quoteStyle": "single" },
+    // NestJS builds its DI on constructor parameter decorators, which Biome
+    // refuses to parse without this.
+    "parser": { "unsafeParameterDecoratorsEnabled": true }
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        // pino's `LogFn` and the `LoggerService` contract we implement are
+        // `any`-based, so values flowing through the log methods are `any` by
+        // construction.
+        "noExplicitAny": "off"
+      },
+      "style": {
+        // `noUncheckedIndexedAccess` is on, so indexing into an array in a
+        // test needs an assertion on every access.
+        "noNonNullAssertion": "off",
+        // Unsafe here: `emitDecoratorMetadata` derives `design:paramtypes`
+        // from the imported bindings, so rewriting a constructor parameter
+        // type as a type-only import erases the metadata and NestJS can no
+        // longer resolve the dependency.
+        "useImportType": "off"
+      }
+    }
+  }
+}
