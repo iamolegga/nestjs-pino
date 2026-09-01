@@ -342,6 +342,7 @@ interface Params<
    * (e.g.`Request completed`).
    */
   assignResponse?: boolean;
+
 }
 ```
 
@@ -593,9 +594,55 @@ class MyService {
 
 By default, this does not extend `Request completed` logs. Set the `assignResponse` parameter to `true` to also enrich response logs automatically emitted by `pino-http`.
 
+## Logging context anywhere else
+
+Queue processors, cron jobs, CLI commands, standalone scripts, tests and
+consumers wired up outside of NestJS have no request pipeline to hook into. Use
+`runInContext` to open a logging context by hand, and `assign` and inherited
+fields work there too:
+
+```ts
+@Processor('emails')
+export class EmailProcessor extends WorkerHost {
+  constructor(private readonly logger: PinoLogger) { super(); }
+
+  async process(job: Job) {
+    return this.logger.runInContext(
+      async () => {
+        this.logger.assign({ jobId: job.id, attempt: job.attemptsMade });
+        this.logger.info('sending');
+        await this.send(job.data);
+      },
+      { bindings: { queue: 'emails' } },
+    );
+  }
+}
+```
+
+It returns whatever the function returns, and an async function keeps the
+context across every `await` inside it.
+
+Pass `inherit: true` to start from the surrounding context instead of from the
+root logger — useful for `@OnEvent` handlers and for work started during a
+request but finished after it. The store is a new one either way, so `assign`
+inside never reaches the log that closes the surrounding request:
+
+```ts
+@OnEvent('order.paid')
+async onPaid(e: OrderPaid) {
+  await this.logger.runInContext(
+    async () => {
+      this.logger.assign({ orderId: e.id });
+      await this.fulfil(e);
+    },
+    { inherit: true },
+  );
+}
+```
+
 ## Change pino params at runtime
 
-Pino root instance with passed via module registration params creates a separate child logger for every request. This root logger params can be changed at runtime via `PinoLogger.root` property which is the pointer to logger instance. Example:
+Pino root instance with passed via module registration params creates a separate child logger for every request. This root logger params can be changed at runtime via `PinoLogger.root` property which is the pointer to logger instance. Every log in the application descends from it — request logs, microservice message logs and logs made outside of any context alike — so a change reaches all of them. It is available in a microservice or standalone application too, where there is no HTTP middleware. Example:
 
 ```ts
 @Controller('/')

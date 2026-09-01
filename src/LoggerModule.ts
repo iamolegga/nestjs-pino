@@ -11,7 +11,6 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
-import { pinoHttp } from 'pino-http';
 
 import { createProvidersForDecorated } from './InjectPinoLogger';
 import { Logger } from './Logger';
@@ -22,6 +21,7 @@ import {
   PARAMS_PROVIDER_TOKEN,
   type Params,
 } from './params';
+import { ensureLoggerMiddleware } from './rootLogger';
 import { Store, storage } from './storage';
 
 /**
@@ -158,16 +158,15 @@ function createLoggerMiddlewares(
     return [bindLoggerMiddlewareFactory(useExisting, assignResponse)];
   }
 
-  const middleware = pinoHttp(
-    ...(Array.isArray(params) ? params : [params as any]),
-  );
+  // The same instance the rest of the application already logs through, rather
+  // than a second one built here: one `transport`, and a `PinoLogger.root` that
+  // governs every log in the application, request-scoped or not.
+  const middleware = ensureLoggerMiddleware(params);
 
   // @ts-expect-error: root is readonly field, but this is the place where
   // it's set actually
   PinoLogger.root = middleware.logger;
 
-  // FIXME: params type here is pinoHttp.Options | pino.DestinationStream
-  // pinoHttp has two overloads, each of them takes those types
   return [middleware, bindLoggerMiddlewareFactory(useExisting, assignResponse)];
 }
 

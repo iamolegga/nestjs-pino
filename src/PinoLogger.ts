@@ -1,8 +1,9 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import pino from 'pino';
 
-import { isPassedLogger, PARAMS_PROVIDER_TOKEN, Params } from './params';
-import { storage } from './storage';
+import { PARAMS_PROVIDER_TOKEN, Params } from './params';
+import { ensureRootLogger, getRootLogger, resetRootLogger } from './rootLogger';
+import { Store, storage } from './storage';
 
 type PinoMethods<CustomLevels extends string = never> = Pick<
   pino.Logger<CustomLevels>,
@@ -26,12 +27,29 @@ type LoggerFn =
   | ((msg: string, ...args: any[]) => void)
   | ((obj: object, msg?: string, ...args: any[]) => void);
 
-let outOfContext: pino.Logger | undefined;
-
 export function __resetOutOfContextForTests() {
-  outOfContext = undefined;
+  resetRootLogger();
   // @ts-expect-error reset root for tests only
   PinoLogger.root = undefined;
+}
+
+/**
+ * Options of {@link PinoLogger.runInContext}.
+ */
+export interface RunInContextOptions {
+  /**
+   * Fields to bind to every log made inside the context, the way `pino-http`
+   * binds the request to a request logger.
+   */
+  bindings?: pino.Bindings;
+
+  /**
+   * Start from the logger of the surrounding context, when there is one,
+   * instead of from the root logger. The store itself is always a new one, so
+   * `assign` inside never leaks back out.
+   * @default false
+   */
+  inherit?: boolean;
 }
 
 /**
@@ -57,7 +75,7 @@ export class PinoLogger<CustomLevels extends string = never>
 
   constructor(
     @Inject(PARAMS_PROVIDER_TOKEN)
-    { pinoHttp, renameContext }: Params<any, any, CustomLevels>,
+    { pinoHttp, renameContext, useExisting }: Params<any, any, CustomLevels>,
   ) {
     // Handle both array tuple [Options, DestinationStream] and object forms
     const pinoHttpOptions = Array.isArray(pinoHttp) ? pinoHttp[0] : pinoHttp;
@@ -69,20 +87,15 @@ export class PinoLogger<CustomLevels extends string = never>
       this.errorKey = pinoHttpOptions.customAttributeKeys.err ?? 'err';
     }
 
-    if (!outOfContext) {
-      if (Array.isArray(pinoHttp)) {
-        outOfContext = pino(...pinoHttp);
-      } else if (isPassedLogger(pinoHttp)) {
-        outOfContext = pinoHttp.logger;
-      } else if (
-        typeof pinoHttp === 'object' &&
-        'stream' in pinoHttp &&
-        typeof pinoHttp.stream !== 'undefined'
-      ) {
-        outOfContext = pino(pinoHttp, pinoHttp.stream);
-      } else {
-        outOfContext = pino(pinoHttp);
-      }
+    const root = ensureRootLogger(pinoHttp);
+
+    // With `useExisting` the logger belongs to the Fastify adapter, so there is
+    // no root of ours to expose and the documented `undefined` stands. The root
+    // logger itself is still built, because logs made outside of a request have
+    // nowhere else to go.
+    if (!useExisting) {
+      // @ts-expect-error root is a readonly field, this is where it is set
+      PinoLogger.root = root;
     }
 
     this.contextName = renameContext || 'context';
@@ -96,7 +109,7 @@ export class PinoLogger<CustomLevels extends string = never>
     // cannot carry the custom levels through, and `pino.Logger`'s `onChild`
     // makes the two instantiations mutually non-comparable.
     return (storage.getStore()?.logger ||
-      outOfContext!) as unknown as pino.Logger<CustomLevels>;
+      getRootLogger()!) as unknown as pino.Logger<CustomLevels>;
   }
 
   trace(msg: string, ...args: any[]): void;
@@ -148,6 +161,28 @@ export class PinoLogger<CustomLevels extends string = never>
     }
     store.logger = store.logger.child(fields);
     store.responseLogger?.setBindings(fields);
+  }
+
+  /**
+   * Runs `fn` inside a fresh logging context, so that `assign` works and every
+   * log made within it carries `bindings` — the same thing the HTTP middleware
+   * does per request, for the places NestJS has no request pipeline for: queue
+   * processors, cron jobs, CLI commands, standalone scripts, tests, and
+   * consumers wired up outside of Nest.
+   *
+   * Returns whatever `fn` returns; an async `fn` keeps the context across every
+   * `await` inside it.
+   */
+  runInContext<T>(fn: () => T, options: RunInContextOptions = {}): T {
+    const { bindings, inherit = false } = options;
+    const current = storage.getStore();
+    const base = (inherit && current ? current.logger : getRootLogger()!)!;
+    const logger = bindings ? base.child(bindings) : base;
+
+    // The response logger is deliberately not carried over when inheriting:
+    // fields assigned inside the nested context must not reach the log that
+    // closes the surrounding request.
+    return storage.run(new Store(logger), fn);
   }
 
   protected call(
