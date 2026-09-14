@@ -14,6 +14,11 @@ import { ApplicationConfig } from '@nestjs/core';
 
 import { createProvidersForDecorated } from './InjectPinoLogger';
 import { Logger } from './Logger';
+import {
+  getMicroserviceHook,
+  PINO_PRE_REQUEST_HOOK,
+  registerMicroserviceHook,
+} from './microservice';
 import { NativeLogger } from './NativeLogger';
 import { PinoLogger } from './PinoLogger';
 import {
@@ -21,7 +26,7 @@ import {
   PARAMS_PROVIDER_TOKEN,
   type Params,
 } from './params';
-import { ensureLoggerMiddleware } from './rootLogger';
+import { ensureLoggerMiddleware, ensureRootLogger } from './rootLogger';
 import { Store, storage } from './storage';
 
 /**
@@ -51,6 +56,7 @@ export class LoggerModule implements NestModule {
     };
 
     const decorated = createProvidersForDecorated();
+    const hookProvider = createHookProvider();
 
     return {
       module: LoggerModule,
@@ -60,8 +66,16 @@ export class LoggerModule implements NestModule {
         ...decorated,
         PinoLogger,
         paramsProvider,
+        hookProvider,
       ],
-      exports: [Logger, NativeLogger, ...decorated, PinoLogger, paramsProvider],
+      exports: [
+        Logger,
+        NativeLogger,
+        ...decorated,
+        PinoLogger,
+        paramsProvider,
+        hookProvider,
+      ],
     };
   }
 
@@ -79,6 +93,7 @@ export class LoggerModule implements NestModule {
     };
 
     const decorated = createProvidersForDecorated();
+    const hookProvider = createHookProvider();
 
     const providers: any[] = [
       Logger,
@@ -86,6 +101,7 @@ export class LoggerModule implements NestModule {
       ...decorated,
       PinoLogger,
       paramsProvider,
+      hookProvider,
       ...(params.providers || []),
     ];
 
@@ -93,14 +109,29 @@ export class LoggerModule implements NestModule {
       module: LoggerModule,
       imports: params.imports,
       providers,
-      exports: [Logger, NativeLogger, ...decorated, PinoLogger, paramsProvider],
+      exports: [
+        Logger,
+        NativeLogger,
+        ...decorated,
+        PinoLogger,
+        paramsProvider,
+        hookProvider,
+      ],
     };
   }
 
   constructor(
     @Inject(PARAMS_PROVIDER_TOKEN) private readonly params: Params,
     private readonly applicationConfig: ApplicationConfig,
-  ) {}
+  ) {
+    // Microservices have no middleware, so `configure` is never called for
+    // them. The hook is registered here instead, early enough that the message
+    // handlers being built later pick it up.
+    if (params.microservice) {
+      ensureRootLogger(params.pinoHttp);
+      registerMicroserviceHook(applicationConfig, params);
+    }
+  }
 
   configure(consumer: MiddlewareConsumer) {
     const {
@@ -147,6 +178,21 @@ export class LoggerModule implements NestModule {
       })),
     ];
   }
+}
+
+/**
+ * Exposes the very hook the module registers on its own, for the one case it
+ * cannot reach: a hybrid application connected without `inheritAppConfig`.
+ */
+function createHookProvider(): Provider {
+  return {
+    provide: PINO_PRE_REQUEST_HOOK,
+    useFactory: (params: Params) => {
+      ensureRootLogger(params.pinoHttp);
+      return getMicroserviceHook(params);
+    },
+    inject: [PARAMS_PROVIDER_TOKEN],
+  };
 }
 
 function createLoggerMiddlewares(

@@ -13,6 +13,9 @@ jobs:
           # path intact, which the default wildcard route relies on.
           - "11.0.8"
           - "11"
+          # 12.0.2 is the oldest release where a pre-request hook leaves a
+          # handler's plain return value alone (nestjs/nest#17644).
+          - "12.0.2"
           - "12"
         nodejs-version:
           - 22
@@ -33,6 +36,7 @@ jobs:
       - run: |
           npm i @nestjs/core@${{ matrix.nestjs-version }} \
                 @nestjs/common@${{ matrix.nestjs-version }} \
+                @nestjs/microservices@${{ matrix.nestjs-version }} \
                 @nestjs/platform-express@${{ matrix.nestjs-version }} \
                 @nestjs/platform-fastify@${{ matrix.nestjs-version }} \
                 @nestjs/testing@${{ matrix.nestjs-version }} \

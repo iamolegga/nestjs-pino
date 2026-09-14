@@ -44,7 +44,7 @@
 
 | nestjs-pino | NestJS       | pino         | pino-http                     | Node.js  |
 | ----------- | ------------ | ------------ | ----------------------------- | -------- |
-| v5          | 11.0.8+, 12  | 10           | 11                            | >=22.12  |
+| v5          | 11.0.8+, 12.0.2+ | 10       | 11                            | >=22.12  |
 | [v4](https://github.com/iamolegga/nestjs-pino/tree/v4.6.1#readme) | 8, 9, 10, 11 | 7.5+, 8, 9, 10 | 6.4+, 7, 8, 9, 10, 11 | >=14     |
 | [v1](https://github.com/iamolegga/nestjs-pino/tree/v1.4.0#readme) | < 8          |              |                               |          |
 
@@ -343,6 +343,12 @@ interface Params<
    */
   assignResponse?: boolean;
 
+  /**
+   * Optional parameters for automatic logging of microservice messages, and
+   * for a logging context in message handlers. See the "Microservices"
+   * section below. Pass `true` for the defaults.
+   */
+  microservice?: boolean | MicroserviceParams<CustomLevels>;
 }
 ```
 
@@ -594,6 +600,254 @@ class MyService {
 
 By default, this does not extend `Request completed` logs. Set the `assignResponse` parameter to `true` to also enrich response logs automatically emitted by `pino-http`.
 
+## Microservices
+
+Message handlers get the same treatment HTTP requests do: every log made while
+handling a message carries the message's context, `assign` works, and a line per
+message is logged automatically. Add the `microservice` parameter:
+
+```ts
+LoggerModule.forRoot({
+  pinoHttp: { level: 'debug' },  // as before: level, transport, redact, ...
+  microservice: true,            // that's all
+});
+```
+
+Nothing changes in `main.ts` — the module registers a [pre-request
+hook](https://docs.nestjs.com/microservices/pre-request-hooks) by itself:
+
+```ts
+const app = await NestFactory.createMicroservice(AppModule, {
+  transport: Transport.RMQ,
+  options: { urls: ['amqp://localhost'], queue: 'users' },
+  bufferLogs: true,
+});
+app.useLogger(app.get(Logger));
+await app.listen();
+```
+
+```ts
+@Controller()
+export class UserController {
+  constructor(private readonly logger: PinoLogger) {}
+
+  @EventPattern('user.created')
+  async handle(@Payload() data: UserCreated) {
+    this.logger.assign({ userId: data.id });
+    this.logger.info('provisioning');
+    await this.provision(data);
+  }
+}
+```
+
+```json
+{"level":30,"reqId":1,"rpc":{"type":"event","pattern":"user.created","transport":"rmq","controller":"UserController","handler":"handle"},"userId":"u_42","msg":"provisioning"}
+{"level":30,"reqId":1,"rpc":{"type":"event","pattern":"user.created","transport":"rmq","controller":"UserController","handler":"handle"},"userId":"u_42","responseTime":37,"msg":"event completed"}
+```
+
+The automatic messages are `message completed`/`message errored` for a
+`@MessagePattern`, where the caller is waiting for a reply, and `event
+completed`/`event errored` for an `@EventPattern`, where nobody is. As in
+`pino-http`, nothing is logged on arrival unless `customReceivedMessage` or
+`customReceivedObject` says so. Unlike `pino-http`, a failed message defaults to
+`error` rather than to `useLevel`, so that lowering `useLevel` to quiet down
+events does not also hide failures. Note that the hook sees the error before
+any `@Catch()` filter, so an `RpcException` thrown on purpose and mapped to a
+client response arrives here too — reach for `customLogLevel` if that should
+not be an `error`. No counterpart of `LoggerErrorInterceptor` is needed: the
+hook receives the error directly.
+
+**Requirements.** Pre-request hooks arrived in NestJS 12, and 12.0.2 is the
+first release on which a hook leaves a handler's plain return value alone
+([nestjs/nest#17644](https://github.com/nestjs/nest/pull/17644)) — hence the
+lower bound of the peer range. On NestJS 11 the parameter is ignored with a
+warning and everything else keeps working.
+
+### Hybrid applications
+
+A hybrid application must be connected with `inheritAppConfig`, because without
+it NestJS gives the microservice an `ApplicationConfig` of its own that
+dependency injection cannot reach:
+
+```ts
+app.connectMicroservice(
+  { transport: Transport.RMQ, options: { urls: ['amqp://localhost'], queue: 'users' } },
+  { inheritAppConfig: true },
+);
+```
+
+If that does not suit you, wire it up by hand instead:
+
+```ts
+import { registerMicroserviceLogging } from 'nestjs-pino';
+
+const ms = app.connectMicroservice(options, { deferInitialization: true });
+registerMicroserviceLogging(ms);
+```
+
+### Microservice configuration params
+
+Shaped after `pino-http`'s: every parameter that does not need the request or
+the response keeps its name and meaning, and the ones that do take an
+`ExecutionContext` instead. Everything pino itself is configured with — level,
+transport, redact, serializers — stays in `pinoHttp`, which builds the one
+logger both halves of the application share.
+
+```ts
+interface MicroserviceParams<CustomLevels extends string = never> {
+  /**
+   * Set to `false` to stop logging a line per message. The logging *context*
+   * is still established either way, so `PinoLogger.assign` and the inherited
+   * fields keep working.
+   * @default true
+   */
+  autoLogging?:
+    | boolean
+    | {
+        /** Skip the automatic logs for the messages this returns `true` for. */
+        ignore?: (context: ExecutionContext) => boolean;
+      };
+
+  /**
+   * Level of the `received` and `completed` logs. Errors default to `error`
+   * regardless of this — unlike `pino-http`, where a failed request is logged
+   * at `useLevel` too — so that lowering this to quiet down events does not
+   * also hide failures. Use `customLogLevel` to change the error level.
+   * Cannot be combined with `customLogLevel`.
+   * @default 'info'
+   */
+  useLevel?: LevelWithSilent | CustomLevels;
+
+  /**
+   * Decides the level of every automatic log, including the error one. Note
+   * that the hook runs before any `@Catch()` filter, so `error` is set for
+   * exceptions the application goes on to handle itself, an `RpcException`
+   * thrown on purpose included.
+   */
+  customLogLevel?: (
+    context: ExecutionContext,
+    error?: Error,
+  ) => LevelWithSilent | CustomLevels;
+
+  /**
+   * Generates the value bound as `reqId`. Defaults to an incrementing counter,
+   * as in `pino-http`; a correlation id off the transport context is usually a
+   * better choice.
+   */
+  genReqId?: (context: ExecutionContext) => ReqId;
+
+  /**
+   * Setting this — or `customReceivedObject` — is what enables the log on
+   * arrival. There is no default text, so nothing is logged on arrival unless
+   * asked for, exactly as in `pino-http`.
+   */
+  customReceivedMessage?: (context: ExecutionContext) => string;
+
+  /** @default `'message completed'`, or `'event completed'` for an `@EventPattern` */
+  customSuccessMessage?: (
+    context: ExecutionContext,
+    result: unknown,
+    responseTime: number,
+  ) => string;
+
+  /** @default `'message errored'`, or `'event errored'` for an `@EventPattern` */
+  customErrorMessage?: (
+    context: ExecutionContext,
+    error: Error,
+    responseTime: number,
+  ) => string;
+
+  /**
+   * Fields of the log on arrival, which it enables the same way
+   * `customReceivedMessage` does. There is no default object, so what it
+   * returns is logged as is.
+   */
+  customReceivedObject?: (context: ExecutionContext) => object;
+
+  /**
+   * Replaces the fields of the `completed` log. `value` is what would be logged
+   * otherwise — `responseTime` under its configured key — and is not merged
+   * back in, so spread it if the extra fields should come on top.
+   */
+  customSuccessObject?: (
+    context: ExecutionContext,
+    result: unknown,
+    value: object,
+  ) => object;
+
+  /**
+   * Replaces the fields of the `errored` log. `value` holds `err` and
+   * `responseTime` under their configured keys and, as with
+   * `customSuccessObject`, is not merged back in.
+   */
+  customErrorObject?: (
+    context: ExecutionContext,
+    error: Error,
+    value: object,
+  ) => object;
+
+  /** Extra fields bound to every log made while handling the message. */
+  customProps?: (context: ExecutionContext) => object;
+
+  /**
+   * Renames the keys this adds to the log record. The `rpc` key is the
+   * microservice counterpart of `pino-http`'s `req`/`res`.
+   */
+  customAttributeKeys?: {
+    /** @default 'rpc' */
+    rpc?: string;
+    /** @default 'err' */
+    err?: string;
+    /** @default 'reqId' */
+    reqId?: string;
+    /** @default 'responseTime' */
+    responseTime?: string;
+  };
+
+  /**
+   * Bind only `reqId`, leaving the `rpc` object out of the logs made while
+   * handling the message. Mirrors `pino-http`'s `quietReqLogger`.
+   */
+  quietRpcLogger?: boolean;
+
+  /**
+   * Leave the `rpc` object out of the `completed`/`errored` log, which repeats
+   * what the surrounding logs already carry. Mirrors `quietResLogger`.
+   */
+  quietResLogger?: boolean;
+
+  /**
+   * Log the message payload as `rpc.payload`. Off by default: payloads are
+   * unbounded in size and routinely carry personal data. `redact` and a
+   * `serializers.rpc` entry in `pinoHttp` apply to it as to anything else.
+   * @default false
+   */
+  includePayload?: boolean;
+}
+```
+
+Use `getRpcInfo(ctx)` inside any of these to reach the pattern, the transport
+and the kind of handler. It returns what is logged under `rpc`, and never
+throws:
+
+```ts
+import { getRpcInfo } from 'nestjs-pino';
+
+LoggerModule.forRoot({
+  microservice: {
+    // events are noisy, replies are not
+    customLogLevel: (ctx, err) =>
+      err ? 'error' : getRpcInfo(ctx).type === 'event' ? 'debug' : 'info',
+
+    autoLogging: { ignore: (ctx) => getRpcInfo(ctx).handler === 'healthcheck' },
+
+    genReqId: (ctx) =>
+      ctx.switchToRpc().getContext<RmqContext>().getMessage()
+         .properties.correlationId ?? randomUUID(),
+  },
+});
+```
+
 ## Logging context anywhere else
 
 Queue processors, cron jobs, CLI commands, standalone scripts, tests and
@@ -670,9 +924,11 @@ app.useGlobalInterceptors(new LoggerErrorInterceptor());
 
 ### v5
 
-- **Requirements changed.** NestJS `11.0.8+` or `12` (11.0.8 is where NestJS
-  started preserving the `{/...}` route syntax the default middleware route
-  relies on), `pino@10`, `pino-http@11`, Node.js `>=22.12`. Support for NestJS
+- **Requirements changed.** NestJS `11.0.8+` or `12.0.2+` (11.0.8 is where
+  NestJS started preserving the `{/...}` route syntax the default middleware
+  route relies on; 12.0.2 is where a microservice pre-request hook stopped
+  corrupting a handler's plain return value), `pino@10`, `pino-http@11`,
+  Node.js `>=22.12`. Support for NestJS
   8-10, pino 7-9 and pino-http 6-10 is dropped. `@nestjs/core` is now a peer
   dependency alongside `@nestjs/common`; every NestJS application already has
   it installed.

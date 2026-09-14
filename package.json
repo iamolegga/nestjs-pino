@@ -45,11 +45,12 @@
   "homepage": "https://github.com/iamolegga/nestjs-pino#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",
-    "@nestjs/common": "^12.0.1",
-    "@nestjs/core": "^12.0.1",
-    "@nestjs/platform-express": "^12.0.1",
-    "@nestjs/platform-fastify": "^12.0.1",
-    "@nestjs/testing": "^12.0.1",
+    "@nestjs/common": "^12.0.2",
+    "@nestjs/core": "^12.0.2",
+    "@nestjs/microservices": "^12.0.2",
+    "@nestjs/platform-express": "^12.0.2",
+    "@nestjs/platform-fastify": "^12.0.2",
+    "@nestjs/testing": "^12.0.2",
     "@swc/core": "^1.16.1",
     "@types/express": "^5.0.6",
     "@types/memorystream": "^0.3.4",
@@ -68,8 +69,8 @@
     "vitest": "^5.0.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^11.0.8 || ^12.0.0",
-    "@nestjs/core": "^11.0.8 || ^12.0.0",
+    "@nestjs/common": "^11.0.8 || ^12.0.2",
+    "@nestjs/core": "^11.0.8 || ^12.0.2",
     "pino": "^10.0.0",
     "pino-http": "^11.0.0",
     "rxjs": "^7.1.0"
