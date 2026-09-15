@@ -1028,6 +1028,17 @@ In NestJS <= 7 and `nestjs-pino@1` when you call `this.logger.log('foo', 'bar');
 
 **A**: check out [genReqId field of pino-http](https://github.com/pinojs/pino-http#pinohttpopts-stream) that are set in `pinoHttp` field of `Params`
 
+With Fastify, though, that field is never used: Fastify assigns its own `request.id` before any middleware runs, `@fastify/middie` copies it onto the raw request, and `pino-http` keeps an existing `req.id` rather than generating one. Pass the generator to the adapter instead, and both Fastify and the logs use it:
+
+```ts
+const app = await NestFactory.create<NestFastifyApplication>(
+  AppModule,
+  new FastifyAdapter({
+    genReqId: (req) => req.headers['x-request-id']?.toString() ?? randomUUID(),
+  }),
+);
+```
+
 ---
 
 **Q**: _How does it work?_
