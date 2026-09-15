@@ -501,6 +501,16 @@ class MyModule {}
 
 See [pino.destination](https://github.com/pinojs/pino/blob/master/docs/api.md#pino-destination)
 
+### Flushing on shutdown
+
+An asynchronous destination, and likewise a [transport](https://github.com/pinojs/pino/blob/master/docs/transports.md), which runs in a worker thread, flushes its buffer on the process `exit` event. NestJS's [shutdown hooks](https://docs.nestjs.com/fundamentals/lifecycle-events#application-shutdown) end the process by re-raising the signal instead, which never emits `exit`: whatever was logged from `beforeApplicationShutdown` and `onApplicationShutdown` is lost, while `console.log` from the same places shows up. Since `@nestjs/core@11.1.10`, ask them to exit through `process.exit()` instead:
+
+```ts
+app.enableShutdownHooks(undefined, { useProcessExit: true });
+```
+
+Mind that this changes the exit code (`0` instead of, say, `143` on `SIGTERM`), which an orchestrator may take into account.
+
 ## Testing a class that uses @InjectPinoLogger
 
 This package exposes a `getLoggerToken()` function that returns a prepared injection token based on the provided context.
