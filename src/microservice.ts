@@ -2,10 +2,10 @@ import { ExecutionContext, Logger as NestLogger } from '@nestjs/common';
 import { LevelWithSilent, Logger } from 'pino';
 import { Observable, Subscription } from 'rxjs';
 
-import { MicroserviceParams, Params } from './params';
-import { getRootLogger } from './rootLogger';
-import { getRpcInfo, RpcInfo } from './rpc';
-import { Store, storage } from './storage';
+import { MicroserviceParams, Params } from './params.js';
+import { getRootLogger } from './rootLogger.js';
+import { getRpcInfo, RpcInfo } from './rpc.js';
+import { Store, storage } from './storage.js';
 
 /**
  * Structurally identical to `PreRequestHook` from `@nestjs/common`, which only

@@ -12,22 +12,22 @@ import {
 } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
 
-import { createProvidersForDecorated } from './InjectPinoLogger';
-import { Logger } from './Logger';
+import { createProvidersForDecorated } from './InjectPinoLogger.js';
+import { Logger } from './Logger.js';
 import {
   getMicroserviceHook,
   PINO_PRE_REQUEST_HOOK,
   registerMicroserviceHook,
-} from './microservice';
-import { NativeLogger } from './NativeLogger';
-import { PinoLogger } from './PinoLogger';
+} from './microservice.js';
+import { NativeLogger } from './NativeLogger.js';
+import { PinoLogger } from './PinoLogger.js';
 import {
   type LoggerModuleAsyncParams,
   PARAMS_PROVIDER_TOKEN,
   type Params,
-} from './params';
-import { ensureLoggerMiddleware, ensureRootLogger } from './rootLogger';
-import { Store, storage } from './storage';
+} from './params.js';
+import { ensureLoggerMiddleware, ensureRootLogger } from './rootLogger.js';
+import { Store, storage } from './storage.js';
 
 /**
  * path-to-regexp v8, used by express@5 and @fastify/middie@9, no longer accepts

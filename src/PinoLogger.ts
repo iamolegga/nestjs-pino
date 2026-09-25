@@ -1,9 +1,13 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import pino from 'pino';
 
-import { PARAMS_PROVIDER_TOKEN, Params } from './params';
-import { ensureRootLogger, getRootLogger, resetRootLogger } from './rootLogger';
-import { Store, storage } from './storage';
+import { PARAMS_PROVIDER_TOKEN, Params } from './params.js';
+import {
+  ensureRootLogger,
+  getRootLogger,
+  resetRootLogger,
+} from './rootLogger.js';
+import { Store, storage } from './storage.js';
 
 type PinoMethods<CustomLevels extends string = never> = Pick<
   pino.Logger<CustomLevels>,

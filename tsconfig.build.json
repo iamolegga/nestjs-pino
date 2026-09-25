@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
+    "outDir": "./dist/cjs",
     // `prebuild` wipes `dist`, so a build-info file living anywhere else would
     // make tsc consider the (now deleted) output up to date and emit nothing.
     "incremental": false
