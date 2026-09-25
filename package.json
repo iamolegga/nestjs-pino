@@ -2,12 +2,18 @@
   "name": "nestjs-pino",
   "version": "5.2.0",
   "description": "Pino logger for NestJS",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/cjs/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -17,7 +23,7 @@
     "lint": "tsc --noemit && biome check src __tests__ example",
     "lint:fix": "tsc --noemit && biome check --write src __tests__ example",
     "prebuild": "rimraf dist",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.esm.json && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "example": "rimraf dist && tsc && LOG_LEVEL=debug node dist/example/main"
   },
   "files": [

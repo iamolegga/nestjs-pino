@@ -49,3 +49,8 @@ jobs:
           key: ${{ github.sha }}-${{ matrix.nestjs-version }}-${{ matrix.nodejs-version }}
       - run: npm t
       - run: npm run build
+      # The ESM build resolves relative imports only by their file extension,
+      # which nothing else checks, so load both builds the way consumers do.
+      - run: |
+          node --input-type=module -e "await import('nestjs-pino')"
+          node -e "require('nestjs-pino')"

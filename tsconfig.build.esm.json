@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    // NestJS 12 is ESM-only, so an ESM app must not reach it through a
+    // `require()` (see #3164). `dist/esm/package.json` marks this output as ESM.
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "outDir": "./dist/esm"
+  }
+}
