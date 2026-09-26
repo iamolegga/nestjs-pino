@@ -18,7 +18,7 @@ jobs:
           # restore cache from build-lint-test wf with key=sha-(oneof nestjs version)-(oneof nodejs version)
           key: ${{ github.sha }}-12-24
 
-      - uses: qltysh/qlty-action/coverage@v2.3.0
+      - uses: qltysh/qlty-action/coverage@v2.4.0
         with:
             token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
             files: ${{github.workspace}}/coverage/lcov.info
