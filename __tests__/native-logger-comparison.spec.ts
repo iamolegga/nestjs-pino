@@ -13,6 +13,7 @@ import { TestCase } from './utils/test-case';
 
 // Same capability probe NativeLogger uses, see src/NativeLogger.ts.
 const hasStructuredParams = 'stringifyParams' in ConsoleLogger.prototype;
+const hasStructuredErrors = 'extractJsonError' in ConsoleLogger.prototype;
 
 // Helper to capture ConsoleLogger JSON output by intercepting stdout/stderr
 function captureConsoleLoggerOutput(
@@ -20,6 +21,7 @@ function captureConsoleLoggerOutput(
   // Typed loosely on purpose: `flattenParams` only exists in the NestJS 12
   // typings, so a literal would not compile on the v11 leg of the matrix.
   options: Record<string, unknown> = {},
+  context: string | null = 'TestController',
 ): Record<string, any>[] {
   const captured: string[] = [];
 
@@ -41,10 +43,10 @@ function captureConsoleLoggerOutput(
   };
 
   try {
-    const logger = new ConsoleLogger('TestController', {
-      json: true,
-      ...options,
-    } as ConsoleLoggerOptions);
+    const loggerOptions = { json: true, ...options } as ConsoleLoggerOptions;
+    const logger = context
+      ? new ConsoleLogger(context, loggerOptions)
+      : new ConsoleLogger(loggerOptions);
     fn(logger);
   } finally {
     process.stdout.write = origStdoutWrite;
@@ -52,6 +54,80 @@ function captureConsoleLoggerOutput(
   }
 
   return captured.map((line) => JSON.parse(line));
+}
+
+// The fields both loggers are expected to agree on.
+function pickComparable(log: Record<string, any>) {
+  const { level, message, context, stack, error, params } = log;
+  return { level, message, context, stack, error, params };
+}
+
+/**
+ * Runs the same calls through ConsoleLogger (with the "TestController" context
+ * passed explicitly, as NestJS's `Logger` would forward it) and through
+ * NativeLogger inside a request handler, and returns the entries of both.
+ */
+async function logWithBoth(
+  PlatformAdapter: (typeof platforms)[number],
+  fn: (logger: Logger) => void,
+  options: {
+    withContext?: boolean;
+    isOwn?: (log: Record<string, any>) => boolean;
+  } = {},
+) {
+  const { withContext = true, isOwn = (v) => v.context === 'TestController' } =
+    options;
+
+  // Forwards the calls the way NestJS's Logger forwards them to the global
+  // logger: the context is appended, and `error` without optional params gets
+  // an `undefined` placeholder before it.
+  const forwardLikeNestLogger = (consoleLogger: ConsoleLogger) =>
+    new Proxy({} as Logger, {
+      get:
+        (_, method: keyof ConsoleLogger) =>
+        (message: unknown, ...optionalParams: unknown[]) => {
+          if (withContext) {
+            optionalParams =
+              method === 'error' && optionalParams.length === 0
+                ? [undefined, 'TestController']
+                : [...optionalParams, 'TestController'];
+          }
+          (consoleLogger[method] as (...args: unknown[]) => void)(
+            message,
+            ...optionalParams,
+          );
+        },
+    });
+
+  const consoleLogs = captureConsoleLoggerOutput(
+    (consoleLogger) => fn(forwardLikeNestLogger(consoleLogger)),
+    {},
+    withContext ? 'TestController' : null,
+  );
+
+  @Controller('/')
+  class TestController {
+    private readonly logger = withContext
+      ? new Logger(TestController.name)
+      : new Logger();
+    @Get()
+    get() {
+      fn(this.logger);
+      return {};
+    }
+  }
+
+  const pinoLogs = await new TestCase(new PlatformAdapter(), {
+    controllers: [TestController],
+  })
+    .useLoggerClass(NativeLogger)
+    .forRoot({ pinoHttp: nativeLoggerOptions })
+    .run();
+
+  return {
+    consoleLogs: consoleLogs.map(pickComparable),
+    nativeLogs: pinoLogs.filter(isOwn).map(pickComparable),
+  };
 }
 
 describe('NativeLogger vs ConsoleLogger comparison', () => {
@@ -394,6 +470,181 @@ describe('NativeLogger vs ConsoleLogger comparison', () => {
           expect(pinoLog.context).toBe('TestController');
         },
       );
+
+      // NestJS 12.1.1 (nestjs/nest#17893) attaches an error passed with the
+      // message to a single entry as a structured `error` field. As above, the
+      // expectation is whatever the installed ConsoleLogger prints.
+      describe('errors', () => {
+        // Before 12.1.1 ConsoleLogger prints such an error as `util.inspect`
+        // output, which NativeLogger doesn't reproduce (it logs the stack), so
+        // the error's details are only compared where they are structured.
+        it('log(message, error) matches ConsoleLogger', async () => {
+          const msg = Math.random().toString();
+          const err = new Error(Math.random().toString());
+
+          const { consoleLogs, nativeLogs } = await logWithBoth(
+            PlatformAdapter,
+            (logger) => logger.log(msg, err),
+          );
+
+          expect(nativeLogs).toStrictEqual(consoleLogs);
+        });
+
+        it('error(message, error) matches ConsoleLogger', async () => {
+          const msg = Math.random().toString();
+          const err = new Error(Math.random().toString());
+
+          const { consoleLogs, nativeLogs } = await logWithBoth(
+            PlatformAdapter,
+            (logger) => logger.error(msg, err),
+          );
+
+          expect(nativeLogs).toStrictEqual(consoleLogs);
+        });
+
+        it('error(error) matches ConsoleLogger', async () => {
+          const err = new Error(Math.random().toString());
+
+          const { consoleLogs, nativeLogs } = await logWithBoth(
+            PlatformAdapter,
+            (logger) => logger.error(err),
+          );
+
+          expect(nativeLogs).toStrictEqual(consoleLogs);
+        });
+
+        it.skipIf(!hasStructuredErrors)(
+          'own properties and the cause chain match ConsoleLogger',
+          async () => {
+            const msg = Math.random().toString();
+            const err = Object.assign(
+              new Error('Payment failed', {
+                cause: Object.assign(
+                  new Error('ECONNRESET', {
+                    cause: { reason: 'not an error' },
+                  }),
+                  { code: 'ECONNRESET', errno: -54 },
+                ),
+              }),
+              // Object-valued properties are left out by ConsoleLogger.
+              { status: 502, response: { body: 'ignored' } },
+            );
+
+            const { consoleLogs, nativeLogs } = await logWithBoth(
+              PlatformAdapter,
+              (logger) => logger.error(msg, err),
+            );
+
+            expect(nativeLogs).toStrictEqual(consoleLogs);
+          },
+        );
+
+        it.skipIf(!hasStructuredErrors)(
+          'AggregateError matches ConsoleLogger',
+          async () => {
+            const msg = Math.random().toString();
+            const err = new AggregateError(
+              [new Error('first'), new Error('second')],
+              'All attempts failed',
+            );
+
+            const { consoleLogs, nativeLogs } = await logWithBoth(
+              PlatformAdapter,
+              (logger) => logger.warn(msg, err),
+            );
+
+            expect(nativeLogs).toStrictEqual(consoleLogs);
+          },
+        );
+
+        it.skipIf(!hasStructuredErrors)(
+          'cause cycles and deep cause chains match ConsoleLogger',
+          async () => {
+            const msg = Math.random().toString();
+
+            const cyclic = new Error('cyclic');
+            cyclic.cause = new Error('back', { cause: cyclic });
+
+            let deep = new Error('level 0');
+            for (let i = 1; i <= 7; i++) {
+              deep = new Error(`level ${i}`, { cause: deep });
+            }
+
+            const { consoleLogs, nativeLogs } = await logWithBoth(
+              PlatformAdapter,
+              (logger) => {
+                logger.error(msg, cyclic);
+                logger.error(msg, deep);
+              },
+            );
+
+            expect(nativeLogs).toStrictEqual(consoleLogs);
+          },
+        );
+      });
+
+      describe('fatal', () => {
+        it('fatal(message, stack) matches ConsoleLogger', async () => {
+          const msg = Math.random().toString();
+          const stack = `Error: ${msg}\n    at Object.<anonymous> (/test.js:1:1)`;
+
+          // Without a context, so the stack is the only optional param.
+          const { consoleLogs, nativeLogs } = await logWithBoth(
+            PlatformAdapter,
+            (logger) => logger.fatal(msg, stack),
+            { withContext: false, isOwn: (v) => v.message === msg },
+          );
+
+          expect(nativeLogs).toStrictEqual(consoleLogs);
+        });
+
+        it('fatal(message, string) with a context matches ConsoleLogger', async () => {
+          const msg = Math.random().toString();
+          const extra = Math.random().toString();
+
+          const { consoleLogs, nativeLogs } = await logWithBoth(
+            PlatformAdapter,
+            (logger) => logger.fatal(msg, extra),
+          );
+
+          expect(nativeLogs).toStrictEqual(consoleLogs);
+        });
+      });
+
+      // Before NestJS 12.1.1 ConsoleLogger dropped the `message` of such
+      // entries in JSON mode. NativeLogger resolves them on every version, so
+      // the comparison only holds where ConsoleLogger does the same.
+      describe('function messages', () => {
+        it('a lazy message is logged as its result', async () => {
+          const msg = Math.random().toString();
+
+          const { consoleLogs, nativeLogs } = await logWithBoth(
+            PlatformAdapter,
+            (logger) => logger.log(() => msg),
+          );
+
+          expect(nativeLogs).toHaveLength(1);
+          expect(nativeLogs[0]!.message).toBe(msg);
+          if (hasStructuredErrors) {
+            expect(nativeLogs).toStrictEqual(consoleLogs);
+          }
+        });
+
+        it('a class message is logged as its name', async () => {
+          class SomeClass {}
+
+          const { consoleLogs, nativeLogs } = await logWithBoth(
+            PlatformAdapter,
+            (logger) => logger.log(SomeClass),
+          );
+
+          expect(nativeLogs).toHaveLength(1);
+          expect(nativeLogs[0]!.message).toBe('SomeClass');
+          if (hasStructuredErrors) {
+            expect(nativeLogs).toStrictEqual(consoleLogs);
+          }
+        });
+      });
     });
   }
 });

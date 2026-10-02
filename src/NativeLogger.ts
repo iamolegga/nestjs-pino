@@ -21,6 +21,89 @@ import { PARAMS_PROVIDER_TOKEN, Params } from './params.js';
  */
 const HAS_STRUCTURED_PARAMS = 'stringifyParams' in ConsoleLogger.prototype;
 
+/**
+ * NestJS v12.1.1 (nestjs/nest#17893) attaches the first `Error` passed with the
+ * message to that entry as a structured `error` field instead of logging it as
+ * an entry of its own, and parses the arguments of `fatal` the way it parses
+ * those of `error`. Detected the same way as above: `extractJsonError` is the
+ * method added for it. Unlike `structuredParams`, ConsoleLogger has no option
+ * for this, so neither does NativeLogger.
+ */
+const HAS_STRUCTURED_ERRORS = 'extractJsonError' in ConsoleLogger.prototype;
+
+/**
+ * How many levels of nested errors (`cause`, `AggregateError#errors`) are
+ * serialized, as in `ConsoleLogger`.
+ */
+const MAX_ERROR_DEPTH = 5;
+
+/**
+ * Mirrors `ConsoleLogger#resolveMessage`: a class resolves to its name, any
+ * other function is called (lazy message) and its result resolved again.
+ */
+function resolveMessage(message: unknown): unknown {
+  if (typeof message !== 'function') {
+    return message;
+  }
+  if (Function.prototype.toString.call(message).startsWith('class ')) {
+    return message.name;
+  }
+  return resolveMessage(message());
+}
+
+/**
+ * Mirrors `ConsoleLogger#serializeError`: `name`, `message`, `stack`, own
+ * primitive properties (e.g. `code`) and, recursively, `cause` and the
+ * `errors` of an `AggregateError`, up to a fixed depth.
+ */
+function serializeError(
+  error: Error,
+  depth = 0,
+  ancestors = new Set<Error>(),
+): Record<string, unknown> {
+  const serialized: Record<string, unknown> = {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+  };
+  for (const [key, value] of Object.entries(error)) {
+    if (key in serialized || key === 'cause' || key === 'errors') {
+      continue;
+    }
+    if (
+      value === null ||
+      (typeof value !== 'object' && typeof value !== 'function')
+    ) {
+      serialized[key] = value;
+    }
+  }
+
+  const serializeNested = (value: unknown) => {
+    if (!(value instanceof Error)) {
+      return value;
+    }
+    if (ancestors.has(value)) {
+      return '[Circular]';
+    }
+    if (depth + 1 > MAX_ERROR_DEPTH) {
+      return '[Truncated]';
+    }
+    return serializeError(value, depth + 1, ancestors);
+  };
+
+  ancestors.add(error);
+  if (error.cause !== undefined) {
+    serialized.cause = serializeNested(error.cause);
+  }
+  const errors = (error as Partial<AggregateError>).errors;
+  if (Array.isArray(errors)) {
+    serialized.errors = errors.map(serializeNested);
+  }
+  ancestors.delete(error);
+
+  return serialized;
+}
+
 /** Mirrors `isPlainObject` from `@nestjs/common`, which is not public API. */
 function isPlainObject(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) {
@@ -74,29 +157,68 @@ export class NativeLogger implements LoggerService {
   }
 
   error(message: any, ...optionalParams: any[]) {
-    this.callError(message, ...optionalParams);
+    this.callError('error', message, ...optionalParams);
   }
 
   fatal(message: any, ...optionalParams: any[]) {
-    this.call('fatal', message, ...optionalParams);
+    if (HAS_STRUCTURED_ERRORS) {
+      this.callError('fatal', message, ...optionalParams);
+    } else {
+      this.call('fatal', message, ...optionalParams);
+    }
   }
 
   private call(level: Level, message: any, ...optionalParams: any[]) {
     const args = [message, ...optionalParams];
     const { messages, context, params } =
       this.getContextAndMessagesToPrint(args);
-    for (const msg of messages) {
-      this.logSingleMessage(level, msg, context, undefined, params);
-    }
+    this.logMessages(level, messages, context, undefined, params);
   }
 
-  private callError(message: any, ...optionalParams: any[]) {
+  private callError(level: Level, message: any, ...optionalParams: any[]) {
     const args = [message, ...optionalParams];
     const { messages, context, stack, params } =
       this.getContextAndStackAndMessagesToPrint(args);
-    for (const msg of messages) {
-      this.logSingleMessage('error', msg, context, stack, params);
+    this.logMessages(level, messages, context, stack, params);
+  }
+
+  private logMessages(
+    level: Level,
+    messages: unknown[],
+    context: string | undefined,
+    stack?: string,
+    params?: Record<string, any>,
+  ) {
+    // Lazy messages must not be evaluated for a disabled level.
+    if (!this.logger.logger.isLevelEnabled(level)) {
+      return;
     }
+    messages = messages.map(resolveMessage);
+
+    // Mirrors `ConsoleLogger#extractJsonError`: the first error goes to the
+    // first entry; when it is the message itself, its message takes its place.
+    let error: Error | undefined;
+    const errorIndex = HAS_STRUCTURED_ERRORS
+      ? messages.findIndex((msg) => msg instanceof Error)
+      : -1;
+    if (errorIndex !== -1) {
+      error = messages[errorIndex] as Error;
+      messages =
+        errorIndex === 0
+          ? [error.message, ...messages.slice(1)]
+          : messages.filter((_, index) => index !== errorIndex);
+    }
+
+    messages.forEach((msg, index) => {
+      this.logSingleMessage(
+        level,
+        msg,
+        context,
+        stack,
+        params,
+        index === 0 ? error : undefined,
+      );
+    });
   }
 
   private logSingleMessage(
@@ -105,6 +227,7 @@ export class NativeLogger implements LoggerService {
     context: string | undefined,
     stack?: string,
     params?: Record<string, any>,
+    error?: Error,
   ) {
     // Flattened params go in first so that this logger's own fields win on a
     // key collision. Collisions with pino's fields (the level, the timestamp,
@@ -120,6 +243,10 @@ export class NativeLogger implements LoggerService {
 
     if (stack) {
       objArg.stack = stack;
+    }
+
+    if (error) {
+      objArg.error = serializeError(error);
     }
 
     if (params && !this.flattenParams) {
