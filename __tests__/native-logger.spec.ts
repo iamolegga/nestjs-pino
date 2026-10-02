@@ -26,6 +26,10 @@ const loggerMethods: [LogLevel, pino.Level][] = [
 // being logged one entry each.
 const hasStructuredParams = 'stringifyParams' in ConsoleLogger.prototype;
 
+// Same capability probe NativeLogger uses: from NestJS v12.1.1 an error is
+// logged as a structured `error` field instead of its stack in `message`.
+const hasStructuredErrors = 'extractJsonError' in ConsoleLogger.prototype;
+
 // NestJS's built-in Logger always appends its constructor context as the last
 // string argument when forwarding to the app-level logger (NativeLogger).
 // So `new Logger('Ctx').log(msg)` calls NativeLogger.log(msg, 'Ctx').
@@ -236,12 +240,24 @@ describe('NativeLogger', () => {
             (v) =>
               typeof v.message === 'string' &&
               v.message.includes(errorMsg) &&
-              v.message.includes('at ') &&
               v.context === 'TestController',
           );
           expect(found).toBeTruthy();
-          // No separate stack field — Error.stack is the message (matches ConsoleLogger)
+          // No separate stack field (matches ConsoleLogger)
           expect(found!.stack).toBeUndefined();
+          if (hasStructuredErrors) {
+            // The error's message is the message, the error itself a field.
+            expect(found!.message).toBe(errorMsg);
+            expect(found!.error).toMatchObject({
+              name: 'Error',
+              message: errorMsg,
+              stack: expect.stringContaining('at '),
+            });
+          } else {
+            // Error.stack is the message.
+            expect(found!.message).toContain('at ');
+            expect(found!.error).toBeUndefined();
+          }
         });
       });
 

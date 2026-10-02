@@ -178,10 +178,11 @@ That's it. Your existing `new Logger(MyService.name)` calls throughout the codeb
 - Argument parsing: last string = context, rest = separate log entries
 - Structured params: on NestJS 12, plain objects after the message are merged into a single `params` field on one entry (`ConsoleLoggerOptions.structuredParams`, on by default) — `this.logger.log('foo', { a: 1 }, { b: 2 })` → `{"message":"foo","params":{"a":1,"b":2}}`. On NestJS 11 each of them is a separate entry. `NativeLogger` follows the `ConsoleLogger` of the NestJS version you actually have, so out of the box there is nothing to configure — see below to override it
 - Error handling: `this.logger.error('msg', stackTrace, 'Ctx')` → `{"message":"msg","stack":"Error: ...","context":"Ctx"}`
-- Error objects: `this.logger.log(new Error('oops'))` → full error+stack as message string
-- Exception handler: thrown errors logged with full stack in `message` field
+- Error objects: on NestJS 12.1.1+ the first error passed with the message goes to the same entry as a structured `error` field with `name`, `message`, `stack`, own primitive properties such as `code`, and the `cause` chain and `AggregateError#errors` — `this.logger.error('Checkout failed', err)` → `{"message":"Checkout failed","error":{"name":"Error","message":"Payment failed","stack":"Error: ...","cause":{...}}}`. An error passed as the message itself, including the ones logged by NestJS's exception handlers, logs its own message: `this.logger.log(new Error('oops'))` → `{"message":"oops","error":{...}}`. Before 12.1.1 an error is logged as an entry of its own, with its stack as the message
+- Fatal: on NestJS 12.1.1+ `fatal` parses its arguments like `error` — `this.logger.fatal('msg', stackTrace)` → `{"message":"msg","stack":"Error: ..."}`
+- Function messages: a lazy message is logged as its result, a class as its name — `this.logger.debug(() => expensive())`. Unlike `ConsoleLogger` before NestJS 12.1.1, this works on every supported version
 - Object messages: `this.logger.log({ foo: 'bar' })` → `{"message":{"foo":"bar"}}`
-- Field names (with `nativeLoggerOptions`): `message`, `timestamp`, `pid`, `level`, `context`, `stack`
+- Field names (with `nativeLoggerOptions`): `message`, `timestamp`, `pid`, `level`, `context`, `stack`, `error`
 
 #### Keeping your ConsoleLogger options
 
@@ -967,6 +968,8 @@ import { Logger } from 'nestjs-pino';
   app.useLogger(app.get(Logger));
 // ...
 ```
+
+Call `app.useLogger()` before `app.init()` or `app.listen()`: since NestJS 12.1.1 the buffer is flushed by `init()` too, so with a logger set after `await app.init()` (as e2e tests often do) the startup logs have already been printed by the built-in logger.
 
 Note that for [standalone applications](https://docs.nestjs.com/standalone-applications), buffering has to be [flushed using app.flushLogs()](https://github.com/nestjs/nest/blob/24e6c821a0859448646fd88831f20e4c5ae50980/packages/core/nest-application-context.ts#L136) manually after custom logger is ready to be used by NestJS (refer to [this issue](https://github.com/iamolegga/nestjs-pino/issues/553) for more details):
 
