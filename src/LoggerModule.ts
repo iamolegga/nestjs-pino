@@ -10,7 +10,7 @@ import {
   type Provider,
   RequestMethod,
 } from '@nestjs/common';
-import { ApplicationConfig } from '@nestjs/core';
+import { ApplicationConfig, HttpAdapterHost } from '@nestjs/core';
 
 import { createProvidersForDecorated } from './InjectPinoLogger.js';
 import { Logger } from './Logger.js';
@@ -123,6 +123,7 @@ export class LoggerModule implements NestModule {
   constructor(
     @Inject(PARAMS_PROVIDER_TOKEN) private readonly params: Params,
     private readonly applicationConfig: ApplicationConfig,
+    private readonly httpAdapterHost: HttpAdapterHost,
   ) {
     // Microservices have no middleware, so `configure` is never called for
     // them. The hook is registered here instead, early enough that the message
@@ -156,6 +157,37 @@ export class LoggerModule implements NestModule {
     } else {
       consumer.apply(...middlewares).forRoutes(...forRoutes);
     }
+
+    this.exposeFastifyResponseHeaders();
+  }
+
+  /**
+   * Fastify hands its headers to the raw response in a single `writeHead`
+   * call, and Node keeps no record of headers passed that way: `getHeaders()`,
+   * which the `res` serializer reads, stays empty. Setting them on the raw
+   * response first makes `writeHead` merge into that record instead, so the
+   * request log carries the response headers as it does under Express.
+   */
+  private exposeFastifyResponseHeaders() {
+    const adapter = this.httpAdapterHost.httpAdapter;
+    if (adapter?.getType() !== 'fastify') return;
+
+    adapter
+      .getInstance()
+      .addHook(
+        'onSend',
+        (
+          _req: unknown,
+          reply: FastifyReplyLike,
+          _payload: unknown,
+          done: () => void,
+        ) => {
+          for (const [name, value] of Object.entries(reply.getHeaders())) {
+            if (value !== undefined) reply.raw.setHeader(name, value);
+          }
+          done();
+        },
+      );
   }
 
   /**
@@ -179,6 +211,12 @@ export class LoggerModule implements NestModule {
     ];
   }
 }
+
+/** The part of fastify's `Reply` used here, spelled out to not depend on it. */
+type FastifyReplyLike = {
+  raw: ServerResponse;
+  getHeaders(): Record<string, number | string | string[] | undefined>;
+};
 
 /**
  * Exposes the very hook the module registers on its own, for the one case it
