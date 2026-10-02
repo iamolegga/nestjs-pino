@@ -108,8 +108,11 @@ export class MicroserviceTestCase {
   ): Promise<LogsContainer> {
     __resetSingletons();
 
-    const port = await getFreePort();
-    const app = await start(port);
+    // Unlike the HTTP harness, this one cannot let the OS choose the port: the
+    // client has to be pointed at it before anything listens. The pick is
+    // therefore racy, and losing the race surfaces as EADDRINUSE, so it is
+    // retried rather than failing the spec.
+    const { app, port } = await startOnAFreePort(start);
 
     const client = ClientProxyFactory.create({
       transport: Transport.TCP,
@@ -175,4 +178,26 @@ export class MicroserviceTestCase {
       },
     };
   }
+}
+
+/**
+ * `getFreePort` reports a port it no longer holds, so by the time the
+ * microservice binds it something else may have taken it.
+ */
+async function startOnAFreePort(
+  start: (port: number) => Promise<INestMicroservice>,
+  attempts = 5,
+): Promise<{ app: INestMicroservice; port: number }> {
+  for (let attempt = 1; ; attempt++) {
+    const port = await getFreePort();
+    try {
+      return { app: await start(port), port };
+    } catch (err) {
+      if (attempt === attempts || !isAddressInUse(err)) throw err;
+    }
+  }
+}
+
+function isAddressInUse(err: unknown): boolean {
+  return (err as { code?: string } | null)?.code === 'EADDRINUSE';
 }

@@ -19,7 +19,6 @@ import {
 } from '../../src';
 import { __resetOutOfContextForTests as __resetSingletons } from '../../src/PinoLogger';
 
-import { getFreePort } from './get-free-port';
 import { LogsContainer } from './logs';
 
 type GlobalPrefixOptions = NonNullable<
@@ -125,7 +124,12 @@ export class TestCase {
       app.setGlobalPrefix(this.globalPrefix, this.globalPrefixOptions);
     }
 
-    const server = await app.listen(await getFreePort(), '0.0.0.0');
+    // Port 0 lets the OS pick one and hands it to supertest through the server
+    // itself. Choosing a port up front instead — probing with a throwaway
+    // listener, closing it, then binding what it reported — leaves a window in
+    // which anything else can take that port, and the run fails with
+    // EADDRINUSE in whichever spec happens to be next.
+    const server = await app.listen(0, '0.0.0.0');
     for (const path of paths) {
       await request(server).get(path).expect(this.expectedCode);
     }
