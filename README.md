@@ -138,6 +138,17 @@ export class MyService {
 > failure, no warning
 > ([#3074](https://github.com/iamolegga/nestjs-pino/issues/3074)).
 
+> [!NOTE]
+> `@InjectPinoLogger(...)` does not work in a module loaded through
+> [`LazyModuleLoader`](https://docs.nestjs.com/fundamentals/lazy-loading-modules),
+> and fails with `Nest can't resolve dependencies of the YourService (?)` for the
+> `PinoLogger:<context>` token. The providers behind those tokens are created by
+> `forRoot(...)` out of the contexts the decorator has registered by then, and a
+> lazy module is only evaluated once it is loaded — too late to be among them.
+> Inject `PinoLogger` and call `setContext(...)`, as in the first constructor
+> above: it needs no token of its own and works everywhere, lazy modules
+> included ([#2069](https://github.com/iamolegga/nestjs-pino/issues/2069)).
+
 ### Drop-in replacement: NativeLogger
 
 `NativeLogger` is a **drop-in replacement** for NestJS's built-in `ConsoleLogger`. It produces **identical JSON output** — same field names, same argument handling, same error format — but powered by pino with request context in every log.
