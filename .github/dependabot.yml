@@ -4,6 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: sunday
+      time: "00:00"
+      timezone: Asia/Nicosia
     open-pull-requests-limit: 10
     groups:
       nestjs:
@@ -30,4 +33,7 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+      day: sunday
+      time: "00:00"
+      timezone: Asia/Nicosia
     open-pull-requests-limit: 5
