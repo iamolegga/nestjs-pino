@@ -34,13 +34,20 @@ import { Store, storage } from './storage.js';
  * the unnamed `*` wildcard: NestJS auto-converts it, but warns while doing so
  * as soon as a global prefix is set.
  *
- * The missing leading slash is deliberate, and is supported upstream: since
- * @nestjs/common@11.0.8 `addLeadingSlash` leaves a path starting with `{/`
- * alone. A global prefix is then applied as `/v1{/*splat}` rather than
- * `/v1/{*splat}`, which matters because the latter does not match the prefix
- * root itself — `/v1` would go unlogged, while `/v1/anything` would not.
+ * Under a global prefix the missing leading slash is deliberate, and is
+ * supported upstream: since @nestjs/common@11.0.8 `addLeadingSlash` leaves a
+ * path starting with `{/` alone. The prefix is then applied as
+ * `/v1{/*splat}` rather than `/v1/{*splat}`, which matters because the latter
+ * does not match the prefix root itself — `/v1` would go unlogged, while
+ * `/v1/anything` would not.
+ *
+ * Without a prefix there is nothing to join, and the leading slash has to be
+ * there: since @fastify/middie@9.3.6 a mount path without one is prefixed with
+ * `/` to close GHSA-5p92-8765-9fv8, turning `{/*splat}` into `/{/*splat}`,
+ * which only matches `/` and paths starting with `//`.
  */
-const DEFAULT_ROUTES = [{ path: '{/*splat}', method: RequestMethod.ALL }];
+const defaultRoutePath = (withPrefix: boolean) =>
+  withPrefix ? '{/*splat}' : '/{*splat}';
 
 @Global()
 @Module({ providers: [Logger, NativeLogger], exports: [Logger, NativeLogger] })
@@ -191,19 +198,24 @@ export class LoggerModule implements NestModule {
   }
 
   /**
-   * A path excluded from the global prefix is served outside of it, while
-   * `DEFAULT_ROUTES` is prefixed like any other middleware route, so such a
-   * path would go unlogged. NestJS adds excluded paths back on its own, but
-   * only for routes that `RouteInfoPathExtractor.isAWildcard` recognises —
-   * which `{/*splat}`, with its leading slash deliberately missing, is not.
+   * A path excluded from the global prefix is served outside of it, while the
+   * default route is prefixed like any other middleware route, so such a path
+   * would go unlogged. NestJS adds excluded paths back on its own, but only
+   * for routes that `RouteInfoPathExtractor.isAWildcard` recognises — which
+   * the default route, with its leading slash deliberately missing under a
+   * prefix, is not.
    *
    * Only the default applies: an explicit `forRoutes` is the user's own call.
    */
   private defaultRoutes() {
     const { exclude } = this.applicationConfig.getGlobalPrefixOptions();
+    const prefix = this.applicationConfig.getGlobalPrefix();
 
     return [
-      ...DEFAULT_ROUTES,
+      {
+        path: defaultRoutePath(!!prefix),
+        method: RequestMethod.ALL,
+      },
       ...(exclude ?? []).map(({ path, requestMethod }) => ({
         path,
         method: requestMethod,
