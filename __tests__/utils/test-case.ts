@@ -4,6 +4,7 @@ import {
   Module,
   type ModuleMetadata,
   type Type,
+  type VersioningOptions,
 } from '@nestjs/common';
 import { AbstractHttpAdapter, NestFactory } from '@nestjs/core';
 import MemoryStream from 'memorystream';
@@ -34,6 +35,7 @@ export class TestCase {
   // `GlobalPrefixOptions` lives in `@nestjs/common/interfaces`, a subpath that
   // no longer resolves under v12, so it is read off the method instead.
   private globalPrefixOptions?: GlobalPrefixOptions;
+  private versioning?: VersioningOptions;
 
   constructor(
     private readonly adapter: AbstractHttpAdapter<unknown, unknown, unknown>,
@@ -50,6 +52,11 @@ export class TestCase {
   setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.globalPrefix = prefix;
     this.globalPrefixOptions = options;
+    return this;
+  }
+
+  setVersioning(options: VersioningOptions): this {
+    this.versioning = options;
     return this;
   }
 
@@ -122,6 +129,10 @@ export class TestCase {
 
     if (this.globalPrefix) {
       app.setGlobalPrefix(this.globalPrefix, this.globalPrefixOptions);
+    }
+
+    if (this.versioning) {
+      app.enableVersioning(this.versioning);
     }
 
     // Port 0 lets the OS pick one and hands it to supertest through the server
