@@ -143,19 +143,17 @@ export class LoggerModule implements NestModule {
       assignResponse,
     } = this.params;
 
-    const middlewares = createLoggerMiddlewares(
-      pinoHttp || {},
-      useExisting,
-      assignResponse,
+    const middlewares = runOncePerRequest(
+      createLoggerMiddlewares(pinoHttp || {}, useExisting, assignResponse),
     );
 
     if (exclude) {
       consumer
-        .apply(...middlewares)
+        .apply(middlewares)
         .exclude(...exclude)
         .forRoutes(...forRoutes);
     } else {
-      consumer.apply(...middlewares).forRoutes(...forRoutes);
+      consumer.apply(middlewares).forRoutes(...forRoutes);
     }
 
     this.exposeFastifyResponseHeaders();
@@ -196,6 +194,11 @@ export class LoggerModule implements NestModule {
    * path would go unlogged. NestJS adds excluded paths back on its own, but
    * only for routes that `RouteInfoPathExtractor.isAWildcard` recognises —
    * which `{/*splat}`, with its leading slash deliberately missing, is not.
+   *
+   * Since @nestjs/core@12.5.0 and 11.2.10 NestJS also mounts a non-wildcard
+   * route on the controller routes it covers on the other side of the prefix,
+   * so an excluded path ends up mounted twice there. `runOncePerRequest` keeps
+   * that from logging the request twice, on every version.
    *
    * Only the default applies: an explicit `forRoutes` is the user's own call.
    */
@@ -252,6 +255,40 @@ function createLoggerMiddlewares(
   PinoLogger.root = middleware.logger;
 
   return [middleware, bindLoggerMiddlewareFactory(useExisting, assignResponse)];
+}
+
+type Middleware = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: (error?: unknown) => void,
+) => void;
+
+/**
+ * Chains the middlewares into one that runs at most once per request.
+ *
+ * NestJS may mount the same middleware on several paths that match one
+ * request: an excluded path covered by the default route is mounted both by
+ * `defaultRoutes()` and, since @nestjs/core@12.5.0 and 11.2.10, by NestJS
+ * itself; overlapping `forRoutes` entries do the same. Each run would attach
+ * another pino-http logger and emit another "request completed" log. Later
+ * runs just pass the request on, still inside the context of the first one.
+ */
+function runOncePerRequest(middlewares: Middleware[]): Middleware {
+  const handled = new WeakSet<IncomingMessage>();
+
+  return function loggerMiddleware(req, res, next) {
+    if (handled.has(req)) return next();
+    handled.add(req);
+
+    const run = (index: number, error?: unknown): void => {
+      if (error !== undefined || index === middlewares.length) {
+        next(error);
+        return;
+      }
+      middlewares[index]!(req, res, (err) => run(index + 1, err));
+    };
+    run(0);
+  };
 }
 
 function bindLoggerMiddlewareFactory(
